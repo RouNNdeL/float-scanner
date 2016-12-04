@@ -145,6 +145,7 @@ const DEFAULT_SETTINGS = {
         }
     },
     filter_by: 1,
+
     float_places: 3,
     search_delay: 5000,
     search_threshold: 2, /*Value for price overdue in percentage before canceling search */

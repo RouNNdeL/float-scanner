@@ -53,9 +53,22 @@ body
     line-height: 24px;
 }
 
-#button-container
+.absolute
+{
+    position: absolute;
+}
+
+.input-container
+{
+    width: 200px;
+    height: auto;
+    position: relative;
+}
+
+#globals-container
 {
     position: fixed;
+    height: 64px;
 }
 
 #settings_container

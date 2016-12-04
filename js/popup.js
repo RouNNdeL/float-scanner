@@ -121,6 +121,16 @@ function saveFilter(event)
     tmp.filter_by = id;
     setOptions(tmp, {notify: true, overwrite: false, reload: false});
 }
+function saveDelay(event)
+{
+    const target = $(event.target);
+    const tmp = $.extend(true, {}, settings);
+    const step = parseInt(target.attr("step"));
+    const new_val = Math.round(target.val() / step) * step;
+    target.val(new_val);
+    tmp.search_delay = new_val;
+    setOptions(tmp, {notify: true, overwrite: false, reload: false});
+}
 function resetToDefaults(event)
 {
     setOptions(DEFAULT_SETTINGS, {notify: true, overwrite: true, reload: true});
@@ -178,8 +188,8 @@ function loadHTML(sett, scroll = null)
         $('body').animate({scrollLeft: $("body").outerWidth()}, 750);
 
     $(window).scroll(function(){
-        const outer = parseInt($("#button-container").closest(".holder").position().top);
-        $("#button-container").css("top",-$(window).scrollTop()+outer);
+        const outer = parseInt($("#globals-container").closest(".holder").position().top);
+        $("#globals-container").css("top", - $(window).scrollTop()+outer);
     });
 
     const title = $("div.card-title");
@@ -189,9 +199,13 @@ function loadHTML(sett, scroll = null)
     const weight = $("select.weight");
     const format = $("input[type=text].format");
     const filter = $("input[type=radio].filter");
+
+    const delay = $("input[type=number]#search-delay");
     const del = $("i.delete");
     const reset = $("#btn-reset");
     const add = $("#btn-add");
+
+    delay.val(sett.search_delay);
 
     title.on("dblclick", editName).addClass("bound");
     limit.change(saveNumber).addClass("bound");
@@ -200,6 +214,8 @@ function loadHTML(sett, scroll = null)
     weight.change(saveWeight).addClass("bound");
     format.change(saveFormat).addClass("bound");
     filter.change(saveFilter).addClass("bound");
+
+    delay.change(saveDelay).addClass("bound");
     del.click(delRule).addClass("bound");
     reset.click(resetToDefaults).addClass("bound");
     add.click(addRule).addClass("bound");
