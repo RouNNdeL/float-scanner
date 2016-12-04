@@ -21,7 +21,7 @@ Array.prototype.prepend = function(value)
     const newArray = this.slice(0);
     newArray.unshift(value);
     return newArray;
-}
+};
 //Globals
 let settings = $.extend(true, {}, DEFAULT_SETTINGS);
 $(function()
@@ -176,6 +176,11 @@ function loadHTML(sett, scroll = null)
 
     if(scroll != null)
         $('body').animate({scrollLeft: $("body").outerWidth()}, 750);
+
+    $(window).scroll(function(){
+        const outer = parseInt($("#button-container").closest(".holder").position().top);
+        $("#button-container").css("top",-$(window).scrollTop()+outer);
+    });
 
     const title = $("div.card-title");
     const limit = $("input[type=number].limit");
