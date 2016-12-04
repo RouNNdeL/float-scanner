@@ -148,6 +148,7 @@ const DEFAULT_SETTINGS = {
     float_places: 3,
     search_delay: 5000,
     search_threshold: 2, /*Value for price overdue in percentage before canceling search */
+    date_format: "H:MM, m/d/yy",
     row_background: "#16202D",
     example_font: "Arial, Helvetica, Verdana, sans-serif"
 };

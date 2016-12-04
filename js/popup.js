@@ -172,7 +172,7 @@ function loadHTML(sett, scroll = null)
         example.text(formatInfo(sett, id, Math.random(), Math.round(Math.random()*100)));
     }
 
-    $("#button-container").scrollSpy();
+    $("#global-container").scrollSpy();
 
     if(scroll != null)
         $('body').animate({scrollLeft: $("body").outerWidth()}, 750);
@@ -214,7 +214,7 @@ function generateSetting(name, value, color, size, weight, format, id)
         "            </div>"+
         "            <div >"+
         "                <label for=\""+id+"-percentage\">Minimum value</label>"+
-        "                <input class=\"small-margin black-text limit\" type=\"number\" id=\""+name+"-percentage\" min=\"0\" max=\"100\" value=\""+value+"\">"+
+        "                <input class=\"small-margin black-text limit\" type=\"number\" id=\""+id+"-percentage\" min=\"0\" max=\"100\" value=\""+value+"\">"+
         "            </div>"+
         "            <div  class=\"row\">"+
         "                <label for=\""+id+"-color\">Color</label>"+

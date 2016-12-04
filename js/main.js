@@ -452,7 +452,7 @@ function showSessionsOnMain(ses, sett)
             s = s.replaceAll("%info%", info);
             s = s.replaceAll("%sid%", k);
             s = s.replaceAll("%quantity%", ses[k].results.length);
-            s = s.replaceAll("%date%", new Date(parseInt(k)).format("H:MM, m/d/yy"));
+            s = s.replaceAll("%date%", new Date(parseInt(k)).format(sett.date_format));
             const parsed = $($.parseHTML(s)[0]);
             parsed.find(".market_session_delete_button").click(function()
             {
