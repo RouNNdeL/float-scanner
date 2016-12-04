@@ -101,6 +101,86 @@ function generateButton(txt, onclick = null)
         btn.click(onclick);
     return start;
 }
+
+async function getFloatsFromURLs(raw_json)
+{
+    const results = [];
+    let bestFloat = 1;
+    let bestQuality = 0;
+    let game = raw_json.app_data[730].name;
+    let name = "";
+    let img = "";
+
+    const assets = raw_json.assets;
+    const listings = raw_json.listinginfo;
+
+    console.log(listings);
+
+    for(let k in listings)
+    {
+        const a = listings[k].asset;
+        const asset = assets[a.appid][a.contextid][a.id];
+        const link = API_URL+asset.actions[0].link.replace("%assetid%", k);
+        try
+        {
+            const r = await call(link, "json");
+            const info = r.iteminfo;
+            const f = info.floatvalue;
+            const min = info.item_name && limits[0] < info.min ? info.min : limits[0];
+            const max = info.item_name && limits[1] > info.max ? info.max : limits[1];
+            let quality = (max-f) / (max-min);
+            quality = Math.round(quality * 100);
+
+            if(bestFloat > f)
+            {
+                bestFloat = f;
+                bestQuality = quality;
+            }
+            const obj = $.extend(true, {}, getPricesFromHtml(raw_json.results_html, a.id));
+            obj.float = f;
+            obj.quality = quality;
+            obj.url = asset.actions[0].url;
+            img = fillImgTemplate(asset);
+            name = asset.market_name;
+            results.push(obj);
+        }
+        catch(error)
+        {
+            console.log("Error: ", error);
+        }
+    }
+    return {results: results, info: {game: game, img: img, name: name}};
+}
+
+async function getMultipleListings(base_url, start, count)
+{
+    const url = base_url.replace(window.location.hash, "")+"/render/?query=&start="+start+"&count="+count;
+    const r = await call(url, "json");
+    return r;
+}
+
+function fillImgTemplate(data)
+{
+    let s = IMG_TEMPLATE;
+    for(let k in data)
+    {
+        s = s.replaceAll("%"+k+"%", data[k]);
+    }
+    return s;
+}
+
+function getPricesFromHtml(html, id)
+{
+    const parsed = $.parseHTML(html);
+    const tempDom = $('<div>').append(parsed);
+    const row = $(".listing_"+id, tempDom);
+    const price_with_fee = row.find(".market_listing_price_with_fee").text();
+    const price_without_fee = row.find(".market_listing_price_without_fee").text();
+    const price_fee_only = row.find(".market_listing_price_with_publisher_fee_only").text();
+
+    return {price_with_fee: price_with_fee, price_fee_only: price_fee_only, price_without_fee: price_without_fee}
+}
+
 async function scanFloat()
 {
     if(in_progress)
