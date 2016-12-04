@@ -2,7 +2,7 @@
     "manifest_version": 2,
     "name": "Float scanner",
     "description": "This extension allows you to scan floats on steam market",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "author": "RouNdeL",
     "short_name": "Float scanner",
     "browser_action": {
