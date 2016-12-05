@@ -12,7 +12,7 @@ $(function()
 {
     limits = getExterior(window.location.href, EXTERIOR_LIMITS);
 
-    loadOptions();
+    loadSettings();
     setSessions();
 
     chrome.runtime.onMessage.addListener(onMessageListener);
@@ -51,7 +51,7 @@ async function onOptionsLoaded(max_tries = 100)
     }
     hashActions();
     if(window.location.href.match(/steamcommunity.com\/market\/?$/))
-        showSessionsOnMain(sessions, getOptions());
+        showSessionsOnMain(sessions, getSettings());
 }
 function hashActions()
 {
@@ -61,7 +61,7 @@ function hashActions()
     {
         const sid = parseInt(session_match[1]);
         if(sessions[sid])
-            showResults(sessions[sid], getOptions());
+            showResults(sessions[sid], getSettings());
         else
             alert("Invalid session ID");
     }
@@ -84,6 +84,10 @@ function buttons()
     //Batch scan button
     const batch_scan_btn = generateButton("Scan floats", scan);
     batch_scan_btn.insertBefore(before);
+
+    //Better scan buttons
+    const better_scan_btn = generateButton("Better scan", betterScan);
+    better_scan_btn.insertBefore(before);
 }
 function generateButton(txt, onclick = null)
 {
@@ -102,7 +106,7 @@ function generateButton(txt, onclick = null)
     return start;
 }
 
-async function getFloatsFromURLs(raw_json)
+async function generateFloats(raw_json)
 {
     const results = [];
     let bestFloat = 1;
@@ -114,8 +118,6 @@ async function getFloatsFromURLs(raw_json)
     const assets = raw_json.assets;
     const listings = raw_json.listinginfo;
 
-    console.log(listings);
-
     for(let k in listings)
     {
         const a = listings[k].asset;
@@ -123,7 +125,7 @@ async function getFloatsFromURLs(raw_json)
         const link = API_URL+asset.actions[0].link.replace("%assetid%", k);
         try
         {
-            const r = await call(link, "json");
+            const r = await ajaxCall(link, "json");
             const info = r.iteminfo;
             const f = info.floatvalue;
             const min = info.item_name && limits[0] < info.min ? info.min : limits[0];
@@ -136,7 +138,7 @@ async function getFloatsFromURLs(raw_json)
                 bestFloat = f;
                 bestQuality = quality;
             }
-            const obj = $.extend(true, {}, getPricesFromHtml(raw_json.results_html, a.id));
+            const obj = $.extend(true, {}, getPricesFromHtml(raw_json.results_html, k));
             obj.float = f;
             obj.quality = quality;
             obj.url = asset.actions[0].url;
@@ -147,16 +149,53 @@ async function getFloatsFromURLs(raw_json)
         catch(error)
         {
             console.log("Error: ", error);
+            const obj = $.extend(true, {}, getPricesFromHtml(raw_json.results_html, k));
+            obj.float = null;
+            obj.quality = null;
+            obj.url = asset.actions[0].url;
+            img = fillImgTemplate(asset);
+            name = asset.market_name;
+            results.push(obj);
         }
     }
     return {results: results, info: {game: game, img: img, name: name}};
 }
 
-async function getMultipleListings(base_url, start, count)
+async function getMultipleListings(base_url, start, count, currency, lang)
 {
-    const url = base_url.replace(window.location.hash, "")+"/render/?query=&start="+start+"&count="+count;
-    const r = await call(url, "json");
+    const url = base_url+"/render/?start="+start+"&count="+count+"&currency="+currency+"&language="+lang;
+    const r = await ajaxCall(url, "json");
     return r;
+}
+
+async function scanMultipleFloats(count, sett)
+{
+    const max_count = 100;
+    let start = 0;
+    const obj = {};
+    while(count > 0)
+    {
+        console.log(count, start, obj);
+        const json = await getMultipleListings(
+            window.location.href.replace(window.location.hash, ""),
+            start,
+            Math.min(count, max_count),
+            sett.currency,
+            sett.lang
+        );
+        $.extend(true, obj, await generateFloats(json));
+        obj.best = {float: getBestFloat(obj), quality: getBestQuality(obj)};
+        start += max_count;
+        count -= max_count;
+    }
+    console.log(obj);
+    return obj;
+}
+
+function betterScan()
+{
+    const count = prompt();
+    scanMultipleFloats(count, $.extend(true, {}, getSettings(), {currency: 3}));
 }
 
 function fillImgTemplate(data)
@@ -174,9 +213,9 @@ function getPricesFromHtml(html, id)
     const parsed = $.parseHTML(html);
     const tempDom = $('<div>').append(parsed);
     const row = $(".listing_"+id, tempDom);
-    const price_with_fee = row.find(".market_listing_price_with_fee").text();
-    const price_without_fee = row.find(".market_listing_price_without_fee").text();
-    const price_fee_only = row.find(".market_listing_price_with_publisher_fee_only").text();
+    const price_with_fee = row.find(".market_listing_price_with_fee").text().replace(/[\t\n]/gm, "");
+    const price_without_fee = row.find(".market_listing_price_without_fee").text().replace(/[\t\n]/gm, "");
+    const price_fee_only = row.find(".market_listing_price_with_publisher_fee_only").text().replace(/[\t\n]/gm, "");
 
     return {price_with_fee: price_with_fee, price_fee_only: price_fee_only, price_without_fee: price_without_fee}
 }
@@ -208,7 +247,7 @@ async function scanFloat()
         const link = API_URL+links[i];
         try
         {
-            const r = await call(link, "json");
+            const r = await ajaxCall(link, "json");
             const info = r.iteminfo;
             const f = info.floatvalue;
             const min = info.item_name && limits[0] < info.min ? info.min : limits[0];
@@ -222,7 +261,7 @@ async function scanFloat()
                 bestQuality = quality;
             }
 
-            const con = setupFloatContainer(f, quality, getOptions());
+            const con = setupFloatContainer(f, quality, getSettings());
             con.insertBefore(before);
 
             const obj = extractParams(row[0].outerHTML);
@@ -321,7 +360,7 @@ async function scan()
         offers.results = offers.results.pushAll(off.results);
         offers.results = removeDuplicates(offers.results);
         offers.info = {game: off.game, name: off.name, img: off.img};
-        best = "Best float: "+formatInfo(getOptions(), null, getBestFloat(offers), getBestQuality(offers));
+        best = "Best float: "+formatInfo(getSettings(), null, getBestFloat(offers), getBestQuality(offers));
 
         if(! await nextPage() || ! con)
             break;
@@ -407,7 +446,7 @@ function showResults(session, sett, filter, overtwrie = true)
         filter = sett.filter_by;
 
     if(overtwrie)
-        sett = getOptions();
+        sett = getSettings();
 
     const old_select = $("#quality_select");
     if(old_select.length > 0)
@@ -587,9 +626,9 @@ function extractParams(s)
     const obj = {};
 
     obj.id = html.attr("id").replace(/[^\d]/g, "");
-    obj.price_with_fee = html.find(".market_listing_price_with_fee").text().replace(/[\s\n]/gm, "");
-    obj.price_fee_only = html.find(".market_listing_price_with_publisher_fee_only").text().replace(/[\s\n]/gm, "");
-    obj.price_without_fee = html.find(".market_listing_price_without_fee").text().replace(/[\s\n]/gm, "");
+    obj.price_with_fee = html.find(".market_listing_price_with_fee").text().replace(/[\t\n]/gm, "");
+    obj.price_fee_only = html.find(".market_listing_price_with_publisher_fee_only").text().replace(/[\t\n]/gm, "");
+    obj.price_without_fee = html.find(".market_listing_price_without_fee").text().replace(/[\t\n]/gm, "");
     obj.img = html.find("img.market_listing_item_img")[0].outerHTML;
     obj.seller = html.find(".market_listing_owner_avatar img").attr("src");
     obj.name = html.find(".market_listing_item_name").text().replace(/[\t\n]/gm, "");
@@ -683,7 +722,7 @@ async function findListing(info)
             sum += parseFloat($(this).text().replace(/[^\d,.]/gm, "").replace(/,/, "."));
         });
         const curr_price = sum / price_container.length;
-        if(! con || curr_price > price * (1+(getOptions().search_threshold / 100)))
+        if(! con || curr_price > price * (1+(getSettings().search_threshold / 100)))
         {
             $.LoadingOverlay("hide");
             return 0;
@@ -693,7 +732,7 @@ async function findListing(info)
             $.LoadingOverlay("hide");
             return 0;
         }
-        await sleep(getOptions().search_delay);
+        await sleep(getSettings().request_delay);
     }
     $("#listing_"+id).css("background-color", "rgba(38, 63, 149, 0.72)");
     await scanFloat();
@@ -705,7 +744,7 @@ async function findListing(info)
     $.LoadingOverlay("hide");
     window.location.hash = "";
 }
-function call(url, type)
+function ajaxCall(url, type)
 {
     return new Promise(resolve =>
         $.ajax(
@@ -776,21 +815,21 @@ function setOptions(options, notify = true)
         settings = $.extend(false, settings, options[STORAGE_SETTINGS]);
     else
         settings = $.extend(false, settings, options);
-    saveOptions(settings);
+    saveSettings(settings);
     if(notify)
         onOptionsLoaded();
 }
-function getOptions()
+function getSettings()
 {
     return settings;
 }
-function saveOptions(settings)
+function saveSettings(settings)
 {
     const obj = {};
     obj[STORAGE_SETTINGS] = settings;
     chrome.storage.sync.set(obj);
 }
-function loadOptions()
+function loadSettings()
 {
     chrome.storage.sync.get(STORAGE_SETTINGS, setOptions);
 }
@@ -817,7 +856,7 @@ function onMessageListener(request, sender, callback)
 {
     if(request.type == TYPE_UPDATE_SETTINGS)
     {
-        loadOptions();
+        loadSettings();
         callback(true);
     }
 }

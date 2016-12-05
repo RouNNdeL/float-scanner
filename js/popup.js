@@ -126,9 +126,11 @@ function saveDelay(event)
     const target = $(event.target);
     const tmp = $.extend(true, {}, settings);
     const step = parseInt(target.attr("step"));
-    const new_val = Math.round(target.val() / step) * step;
+    let new_val = Math.round(target.val() / step) * step;
+    if(new_val < 50)
+        new_val = 50;
     target.val(new_val);
-    tmp.search_delay = new_val;
+    tmp.request_delay = new_val;
     setOptions(tmp, {notify: true, overwrite: false, reload: false});
 }
 function resetToDefaults(event)
@@ -205,7 +207,7 @@ function loadHTML(sett, scroll = null)
     const reset = $("#btn-reset");
     const add = $("#btn-add");
 
-    delay.val(sett.search_delay);
+    delay.val(sett.request_delay);
 
     title.on("dblclick", editName).addClass("bound");
     limit.change(saveNumber).addClass("bound");
@@ -220,6 +222,10 @@ function loadHTML(sett, scroll = null)
     reset.click(resetToDefaults).addClass("bound");
     add.click(addRule).addClass("bound");
 }
+/*async function getCountryCode()
+ {
+ return call(COUNTRY_CODE_API, "json").countryCode;
+ }*/
 function generateSetting(name, value, color, size, weight, format, id)
 {
     return "<div class=\"row small-margin setting\" id=\""+id+"\" style=\"margin: 5px;\">"+
@@ -267,6 +273,22 @@ function generateSetting(name, value, color, size, weight, format, id)
         "    </div>"+
         "</div>";
 }
+
+function getCountryCodeFromCookies()
+{
+    chrome.cookies.get({
+        name: "steamCountry",
+        url: "http://steamcommunity.com/market/"
+    }, onCountryCodeLoaded)
+}
+
+function onCountryCodeLoaded(cookie)
+{
+    const tmp = $.extend(true, {}, settings);
+    tmp.country = cookie.value;
+    setOptions(tmp, {});
+}
+
 function setOptions(set, options = {})
 {
     const defaults = {
