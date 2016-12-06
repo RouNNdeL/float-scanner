@@ -213,6 +213,7 @@ const STORAGE_LISTINGS = "listings";
 const STORAGE_SESSIONS = "sessions";
 const TYPE_NOTIFY = "TYPE_NOTIFY";
 const TYPE_UPDATE_SETTINGS = "TYPE_UPDATE_SETTINGS";
+const TYPE_CLEAR_CACHE = "TYPE_CLEAR_CACHE";
 const IMG_TEMPLATE = "<img id=\"listing_%id%_image\" src=\"%icon_url%\" srcset=\"%icon_url%/62fx62f 1x, %icon_url%/62fx62fdpx2x 2x\" style=\"border-color: #D2D2D2;\" class=\"market_listing_item_img economy_item_hoverable\" alt=\"\">";
 
 

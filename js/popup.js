@@ -160,6 +160,24 @@ function addRule(event)
     tmp.qualities.push(settings.defaults);
     setOptions(tmp, {notify: true, reload: true, overwrite: true, scroll_to: settings.qualities.length-1})
 }
+function clearCache(event)
+{
+    let disp = false;
+    notifyClearCache(function(resp)
+    {
+        if(! disp)
+        {
+            disp = true;
+            if(resp)
+                Materialize.toast("Success!", 2500);
+            else
+            {
+                Materialize.toast("Failure!", 2500);
+                Materialize.toast("Please open steam market in a new tab", 2500);
+            }
+        }
+    });
+}
 /*function reloadExample(sett)
  {
  const parents = $(".setting");
@@ -240,6 +258,7 @@ function loadHTML(sett, scroll = null)
     const del = $("i.delete");
     const reset = $("#btn-reset");
     const add = $("#btn-add");
+    const clear = $("#btn-clear_cache");
 
     delay.val(sett.request_delay);
     setupCurrencySelect(CURRENCIES, currency);
@@ -259,6 +278,7 @@ function loadHTML(sett, scroll = null)
     del.click(delRule).addClass("bound");
     reset.click(resetToDefaults).addClass("bound");
     add.click(addRule).addClass("bound");
+    clear.click(clearCache).addClass("bound");
 }
 /*async function getCountryCode()
  {
@@ -366,7 +386,21 @@ function notifyUpdate(callback)
     {
         for(let i = 0; i < tabs.length; ++ i)
         {
+            if(tabs[i].url == undefined || tabs[i].url == null || tabs[i].url.match(/steamcommunity\.com\/market/).length <= 0)
+                continue;
             chrome.tabs.sendMessage(tabs[i].id, {type: TYPE_UPDATE_SETTINGS}, callback);
+        }
+    });
+}
+function notifyClearCache(callback)
+{
+    chrome.tabs.query({}, function(tabs)
+    {
+        for(let i = 0; i < tabs.length; ++ i)
+        {
+            if(tabs[i].url == undefined || tabs[i].url == null || tabs[i].url.match(/steamcommunity\.com\/market/).length <= 0)
+                continue;
+            chrome.tabs.sendMessage(tabs[i].id, {type: TYPE_CLEAR_CACHE}, callback);
         }
     });
 }

@@ -267,23 +267,23 @@ async function betterScan()
                 "position": "absolute",
                 "background": "#16202D",
                 "bottom": "100px",
-                "height": "30px",
+                "height": "30px"/*,
                 "-webkit-transition": "all 1s linear",
                 "-moz-transition": "all 1s linear",
                 "-o-transition": "all 1s linear",
                 "-ms-transition": "all 1s linear",
-                "transition": "all 1s linear",
+                 "transition": "all 1s linear",*/
             },
             text: {
                 "position": "absolute",
                 "color": "#16202D",
                 "bottom": "135px",
-                "font-size": "32px",
+                "font-size": "32px"/*,
                 "-webkit-transition": "all 1s linear",
                 "-moz-transition": "all 1s linear",
                 "-o-transition": "all 1s linear",
                 "-ms-transition": "all 1s linear",
-                "transition": "all 1s linear",
+                 "transition": "all 1s linear",*/
             }
         });
     const count = prompt("Input number of ITEMS");
@@ -1020,13 +1020,21 @@ function getNameFromUrl(url = null)
     const regex = /steamcommunity\.com\/market\/listings\/730\/(.+)\/?/;
     if(url !== undefined && url !== null && regex.exec(url).length > 0)
         return regex.exec(url)[1];
-    return regex.exec(window.location.href.replace(window.location.hash, ""))[1];
+    const exec = regex.exec(window.location.href.replace(window.location.hash, ""));
+    if(exec == null || exec == undefined || exec[1] == null || exec[1] == undefined)
+        return {};
+    return exec[1];
 }
 function onMessageListener(request, sender, callback)
 {
     if(request.type == TYPE_UPDATE_SETTINGS)
     {
         loadSettings();
+        callback(true);
+    }
+    if(request.type == TYPE_CLEAR_CACHE)
+    {
+        clearListings();
         callback(true);
     }
 }
