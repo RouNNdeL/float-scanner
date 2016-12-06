@@ -3,6 +3,7 @@ this.$ = this.jQuery = jQuery.noConflict(true);
 //Globals
 let settings = $.extend(true, {}, DEFAULT_SETTINGS);
 let sessions;
+let listings;
 let limits;
 let in_progress = false;
 let con = true;
@@ -14,6 +15,7 @@ $(function()
 
     loadSettings();
     setSessions();
+    setListings();
 
     chrome.runtime.onMessage.addListener(onMessageListener);
 
@@ -107,7 +109,7 @@ function generateButton(txt, onclick = null)
     return start;
 }
 
-async function generateFloats(raw_json, sett, progress, count)
+async function generateFloats(raw_json, sett, progress, count, lists, obj)
 {
     const results = [];
     let bestFloat = 1;
@@ -123,12 +125,33 @@ async function generateFloats(raw_json, sett, progress, count)
     {
         if(! con)
             continue;
+        if(! listings.hasOwnProperty(k))
+            continue;
         const a = listings[k].asset;
         const asset = assets[a.appid][a.contextid][a.id];
         const link = API_URL+asset.actions[0].link.replace("%assetid%", a.id);
         try
         {
-            const r = await ajaxCall(link, "json");
+            let r;
+            if(lists.hasOwnProperty(k))
+            {
+                r = lists[k];
+                await sleep(20);
+            }
+            else
+            {
+                r = await ajaxCall(link, "json");
+                const info = r.iteminfo;
+                const stripped = {
+                    iteminfo: {
+                        floatvalue: info.floatvalue,
+                        min: info.min,
+                        max: info.max,
+                        item_name: info.item_name
+                    }
+                };
+                addListing(lists, k, stripped);
+            }
             const info = r.iteminfo;
             const f = info.floatvalue;
             const min = info.item_name && limits[0] < info.min ? info.min : limits[0];
@@ -176,12 +199,15 @@ async function generateFloats(raw_json, sett, progress, count)
                     getBestFloat({results: results}),
                     getBestQuality({results: results}))
             );
+            const full_obj = $.extend(true, {}, obj, {results: results});
             if(results.length == 1)
-                progress.updateAmount("Found "+filterRows({results: results}, sett, sett.filter_by).results.length
+                progress.updateAmount("Found "+filterRows(full_obj, sett, sett.filter_by).results.length
                     +" offer above "+sett.qualities[sett.filter_by].limit+"%");
             else
-                progress.updateAmount("Found "+filterRows({results: results}, sett, sett.filter_by).results.length
+            {
+                progress.updateAmount("Found "+filterRows(full_obj, sett, sett.filter_by).results.length
                     +" offers above "+sett.qualities[sett.filter_by].limit+"%");
+            }
         }
     }
     return {results: results, info: {game: game, img: img, name: name}};
@@ -194,7 +220,7 @@ async function getMultipleListings(base_url, start, count, currency, lang)
     return r;
 }
 
-async function scanMultipleFloats(count, sett, progress)
+async function scanMultipleFloats(count, sett, progress, lists)
 {
     const max_count = 100;
     let start = 0;
@@ -221,7 +247,7 @@ async function scanMultipleFloats(count, sett, progress)
             sett.currency,
             sett.lang
         );
-        const new_results = await generateFloats(json, sett, progress, c);
+        const new_results = await generateFloats(json, sett, progress, c, lists, obj);
         obj.results.pushAll(new_results.results);
         obj.info = new_results.info;
         obj.best = {float: getBestFloat(obj), quality: getBestQuality(obj)};
@@ -271,7 +297,7 @@ async function betterScan()
     progress.updateBestInfo("Starting scan");
     progress.updateProgress(0, "0/"+count, 0);
 
-    const new_ses = await scanMultipleFloats(count, /*$.extend(true, {}, getSettings(), {currency: 2})*/getSettings(), progress);
+    const new_ses = await scanMultipleFloats(count, /*$.extend(true, {}, getSettings(), {currency: 2})*/getSettings(), progress, getListings());
 
     progress.updateBestInfo("Setting up the view...");
     progress.updateAmount("Please be patient");
@@ -955,6 +981,46 @@ function setSessions()
 function clearSessions()
 {
     window.localStorage.removeItem(STORAGE_SESSIONS);
+}
+function addListing(lists, id, new_listing)
+{
+    const itemName = getNameFromUrl();
+    if(! lists.hasOwnProperty(itemName))
+        lists[itemName] = {};
+    lists[itemName][id] = new_listing;
+    const new_lists = $.extend(true, {}, getAllListings(), lists);
+    window.localStorage.setItem(STORAGE_LISTINGS, JSON.stringify(new_lists));
+    setListings();
+}
+function getListings()
+{
+    return listings;
+}
+function setListings()
+{
+    let allListings = $.parseJSON(window.localStorage.getItem(STORAGE_LISTINGS));
+    if(allListings == null || allListings == undefined)
+    {
+        allListings = {};
+        window.localStorage.setItem(STORAGE_LISTINGS, JSON.stringify(allListings))
+    }
+    listings = allListings[getNameFromUrl()] || {};
+}
+function clearListings()
+{
+    window.localStorage.removeItem(STORAGE_LISTINGS);
+    setListings();
+}
+function getAllListings()
+{
+    return ($.parseJSON(window.localStorage.getItem(STORAGE_LISTINGS)) || {});
+}
+function getNameFromUrl(url = null)
+{
+    const regex = /steamcommunity\.com\/market\/listings\/730\/(.+)\/?/;
+    if(url !== undefined && url !== null && regex.exec(url).length > 0)
+        return regex.exec(url)[1];
+    return regex.exec(window.location.href.replace(window.location.hash, ""))[1];
 }
 function onMessageListener(request, sender, callback)
 {

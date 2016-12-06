@@ -209,6 +209,7 @@ const EXTERIOR_LIMITS = {
     "Battle-Scarred": [0.45, 1]
 };
 const STORAGE_SETTINGS = "settings";
+const STORAGE_LISTINGS = "listings";
 const STORAGE_SESSIONS = "sessions";
 const TYPE_NOTIFY = "TYPE_NOTIFY";
 const TYPE_UPDATE_SETTINGS = "TYPE_UPDATE_SETTINGS";
