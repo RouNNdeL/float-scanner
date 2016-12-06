@@ -38,30 +38,31 @@ $(document).keyup(function(e)
 });
 $(window).on("hashchange", function(e)
 {
-    hashActions();
+    hashActions(getSessions());
 });
 async function onOptionsLoaded(max_tries = 100)
 {
     let tries = 0;
-    while(! sessions)
+    const ses = getSessions();
+    while(! ses)
     {
         if(tries > max_tries)
             break;
         await sleep(100);
     }
-    hashActions();
+    hashActions(ses);
     if(window.location.href.match(/steamcommunity.com\/market\/?$/))
-        showSessionsOnMain(sessions, getSettings());
+        showSessionsOnMain(ses, getSettings());
 }
-function hashActions()
+function hashActions(sess)
 {
     const session_match = window.location.hash.match(/session_id=(\d+)/);
     const search_match = window.location.hash.match(/search=(.+)/);
     if(session_match && session_match[1])
     {
         const sid = parseInt(session_match[1]);
-        if(sessions[sid])
-            showResults(sessions[sid], getSettings());
+        if(sess[sid])
+            showResults(sess[sid], getSettings());
         else
             alert("Invalid session ID");
     }
@@ -106,7 +107,7 @@ function generateButton(txt, onclick = null)
     return start;
 }
 
-async function generateFloats(raw_json)
+async function generateFloats(raw_json, sett, progress, count)
 {
     const results = [];
     let bestFloat = 1;
@@ -120,9 +121,11 @@ async function generateFloats(raw_json)
 
     for(let k in listings)
     {
+        if(! con)
+            continue;
         const a = listings[k].asset;
         const asset = assets[a.appid][a.contextid][a.id];
-        const link = API_URL+asset.actions[0].link.replace("%assetid%", k);
+        const link = API_URL+asset.actions[0].link.replace("%assetid%", a.id);
         try
         {
             const r = await ajaxCall(link, "json");
@@ -138,10 +141,13 @@ async function generateFloats(raw_json)
                 bestFloat = f;
                 bestQuality = quality;
             }
-            const obj = $.extend(true, {}, getPricesFromHtml(raw_json.results_html, k));
+            const obj = $.extend(true, {}, getInfoFromHtml(raw_json.results_html, k));
+            if(! obj.price_with_fee.match(/\d/))
+                continue;
             obj.float = f;
             obj.quality = quality;
             obj.url = asset.actions[0].url;
+            obj.id = k;
             img = fillImgTemplate(asset);
             name = asset.market_name;
             results.push(obj);
@@ -149,13 +155,33 @@ async function generateFloats(raw_json)
         catch(error)
         {
             console.log("Error: ", error);
-            const obj = $.extend(true, {}, getPricesFromHtml(raw_json.results_html, k));
+            const obj = $.extend(true, {}, getInfoFromHtml(raw_json.results_html, k));
             obj.float = null;
             obj.quality = null;
             obj.url = asset.actions[0].url;
             img = fillImgTemplate(asset);
             name = asset.market_name;
             results.push(obj);
+        }
+        finally
+        {
+            progress.updateProgress(
+                ((progress.getProgress()+1) / count) * 100,
+                progress.getProgress()+1+"/"+count,
+                progress.getProgress()+1
+            );
+            progress.updateBestInfo("Best float: "+
+                formatInfo(
+                    getSettings(), null,
+                    getBestFloat({results: results}),
+                    getBestQuality({results: results}))
+            );
+            if(results.length == 1)
+                progress.updateAmount("Found "+filterRows({results: results}, sett, sett.filter_by).results.length
+                    +" offer above "+sett.qualities[sett.filter_by].limit+"%");
+            else
+                progress.updateAmount("Found "+filterRows({results: results}, sett, sett.filter_by).results.length
+                    +" offers above "+sett.qualities[sett.filter_by].limit+"%");
         }
     }
     return {results: results, info: {game: game, img: img, name: name}};
@@ -168,14 +194,26 @@ async function getMultipleListings(base_url, start, count, currency, lang)
     return r;
 }
 
-async function scanMultipleFloats(count, sett)
+async function scanMultipleFloats(count, sett, progress)
 {
     const max_count = 100;
     let start = 0;
     const obj = {};
-    while(count > 0)
+    obj.results = [];
+    const check = await getMultipleListings(
+        window.location.href.replace(window.location.hash, ""),
+        0,
+        10,
+        sett.currency,
+        sett.lang
+    );
+    if(check.success != true)
+        return obj;
+
+    count = Math.min(count, check.total_count);
+    const c = count;
+    while(count > 0 && con)
     {
-        console.log(count, start, obj);
         const json = await getMultipleListings(
             window.location.href.replace(window.location.hash, ""),
             start,
@@ -183,19 +221,68 @@ async function scanMultipleFloats(count, sett)
             sett.currency,
             sett.lang
         );
-        $.extend(true, obj, await generateFloats(json));
+        const new_results = await generateFloats(json, sett, progress, c);
+        obj.results.pushAll(new_results.results);
+        obj.info = new_results.info;
         obj.best = {float: getBestFloat(obj), quality: getBestQuality(obj)};
         start += max_count;
         count -= max_count;
     }
-    console.log(obj);
     return obj;
 }
 
-function betterScan()
+async function betterScan()
 {
-    const count = prompt();
-    scanMultipleFloats(count, $.extend(true, {}, getSettings(), {currency: 3}));
+    if(scanning)
+        return 0;
+    const progress = new LoadingOverlayProgress(
+        {
+            bar: {
+                "position": "absolute",
+                "background": "#16202D",
+                "bottom": "100px",
+                "height": "30px",
+                "-webkit-transition": "all 1s linear",
+                "-moz-transition": "all 1s linear",
+                "-o-transition": "all 1s linear",
+                "-ms-transition": "all 1s linear",
+                "transition": "all 1s linear",
+            },
+            text: {
+                "position": "absolute",
+                "color": "#16202D",
+                "bottom": "135px",
+                "font-size": "32px",
+                "-webkit-transition": "all 1s linear",
+                "-moz-transition": "all 1s linear",
+                "-o-transition": "all 1s linear",
+                "-ms-transition": "all 1s linear",
+                "transition": "all 1s linear",
+            }
+        });
+    const count = prompt("Input number of ITEMS");
+    if(count < 1)
+        return 0;
+    scanning = true;
+    con = true;
+    $.LoadingOverlay("show", {
+        custom: progress.init()
+    });
+    progress.updateBestInfo("Starting scan");
+    progress.updateProgress(0, "0/"+count, 0);
+
+    const new_ses = await scanMultipleFloats(count, /*$.extend(true, {}, getSettings(), {currency: 2})*/getSettings(), progress);
+
+    progress.updateBestInfo("Setting up the view...");
+    progress.updateAmount("Please be patient");
+
+    const sid = Math.abs(Date.now());
+    addSession(getSessions(), new_ses, sid);
+    await sleep(1000);
+
+    window.location.hash = "#session_id="+sid;
+    scanning = false;
+    $.LoadingOverlay("hide");
 }
 
 function fillImgTemplate(data)
@@ -203,12 +290,15 @@ function fillImgTemplate(data)
     let s = IMG_TEMPLATE;
     for(let k in data)
     {
-        s = s.replaceAll("%"+k+"%", data[k]);
+        if(k == "icon_url")
+            s = s.replaceAll("%"+k+"%", ICON_URL+data[k]);
+        else
+            s = s.replaceAll("%"+k+"%", data[k]);
     }
     return s;
 }
 
-function getPricesFromHtml(html, id)
+function getInfoFromHtml(html, id)
 {
     const parsed = $.parseHTML(html);
     const tempDom = $('<div>').append(parsed);
@@ -216,8 +306,14 @@ function getPricesFromHtml(html, id)
     const price_with_fee = row.find(".market_listing_price_with_fee").text().replace(/[\t\n]/gm, "");
     const price_without_fee = row.find(".market_listing_price_without_fee").text().replace(/[\t\n]/gm, "");
     const price_fee_only = row.find(".market_listing_price_with_publisher_fee_only").text().replace(/[\t\n]/gm, "");
+    const seller = row.find(".market_listing_owner_avatar img").attr("src");
 
-    return {price_with_fee: price_with_fee, price_fee_only: price_fee_only, price_without_fee: price_without_fee}
+    return {
+        price_with_fee: price_with_fee,
+        price_fee_only: price_fee_only,
+        price_without_fee: price_without_fee,
+        seller: seller
+    }
 }
 
 async function scanFloat()
@@ -293,7 +389,10 @@ function setupFloatContainer(float, quality, sett)
     const css = (tier !== undefined || tier !== null) ? qualities[tier].css : sett.defaults.css;
     const info = formatInfo(sett, tier, float, quality);
     const div = $("<div>", {
-        class: "market_listing_right_cell float_container"
+        class: "market_listing_right_cell float_container",
+        css: {
+            width: "150px"
+        }
     });
     const span = $("<span>", {
         class: "market_listing_item_float",
@@ -332,9 +431,9 @@ async function scan()
             }
         });
     $.LoadingOverlay("show", {
-        custom: progress.Init()
+        custom: progress.init()
     });
-    progress.UpdatePrice("Starting scan");
+    progress.updateBestInfo("Starting scan");
     if(! await page(1, 10))
     {
         alert("Please manually navigate to page 1");
@@ -353,7 +452,7 @@ async function scan()
     const offers = {};
     offers.results = [];
     let best = "Loading floats...";
-    progress.UpdatePrice(best);
+    progress.updateBestInfo(best);
     for(let i = 0; i < pages; i ++)
     {
         const off = await scanFloat();
@@ -365,38 +464,38 @@ async function scan()
         if(! await nextPage() || ! con)
             break;
 
-        progress.Update(Math.round((i+1) * 100 / pages));
-        progress.UpdatePrice(best);
+        progress.updateProgress(Math.round((i+1) * 100 / pages));
+        progress.updateBestInfo(best);
 
-        if(offers.lengh == 1)
-            progress.UpdateAmount("Found "+filterRows(offers, settings, settings.filter_by).results.length+" offer above "+settings.qualities[settings.filter_by].limit+"%");
+        if(offers.results.length == 1)
+            progress.updateAmount("Found "+filterRows(offers, settings, settings.filter_by).results.length+" offer above "+settings.qualities[settings.filter_by].limit+"%");
         else
-            progress.UpdateAmount("Found "+filterRows(offers, settings, settings.filter_by).results.length+" offers above "+settings.qualities[settings.filter_by].limit+"%");
+            progress.updateAmount("Found "+filterRows(offers, settings, settings.filter_by).results.length+" offers above "+settings.qualities[settings.filter_by].limit+"%");
     }
 
-    progress.UpdatePrice("Setting up the view...");
-    progress.UpdateAmount("Please be patient");
+    progress.updateBestInfo("Setting up the view...");
+    progress.updateAmount("Please be patient");
 
     offers.best = {float: getBestFloat(offers), quality: getBestQuality(offers)};
     const sid = Math.abs(Date.now());
-    addSession(sessions, offers, sid);
+    addSession(getSessions(), offers, sid);
     await sleep(1000);
 
     window.location.hash = "#session_id="+sid;
 
     sendNotification("Scan finished",
-     "Float scan of "
-     +pages
-     +" pages has just finished. Found "
-     +offers.length
-     +" offers that were above "
-     +settings.qualities[settings.filter_by].limit+"%."
-     +" Click here to view the results",
-     function(data)
-     {
-     console.log(data)
-     }
-     );
+        "Float scan of "
+        +pages
+        +" pages has just finished. Found "
+        +offers.length
+        +" offers that were above "
+        +settings.qualities[settings.filter_by].limit+"%."
+        +" Click here to view the results",
+        function(data)
+        {
+            console.log(data)
+        }
+    );
     scanning = false;
     $.LoadingOverlay("hide");
 }
@@ -475,8 +574,9 @@ function showResults(session, sett, filter, overtwrie = true)
     else
     {
         $(".market_listing_table_header").remove();
-        con.prepend($.parseHTML(DEFAULT_HEADER));
+        con.prepend($.parseHTML(DEFAULT_HEADER_WITH_FLOAT));
     }
+    console.log(filtered_results);
     for(let i = 0; i < display.length; i ++)
     {
         const row = $(display[i]);
@@ -638,7 +738,7 @@ function extractParams(s)
 }
 function filterRows(obj, settings, filter)
 {
-    const min_quality = filter == null || filter == undefined ? -1: settings.qualities[filter].limit;
+    const min_quality = filter == null || filter == undefined ? - 1 : settings.qualities[filter].limit;
     const new_rows = {};
     new_rows.results = [];
     for(let i = 0; i < obj.results.length; i ++)
@@ -657,7 +757,7 @@ function removeDuplicates(rows)
 {
     const new_rows = [];
     const ids = [];
-    for(let i = 0; i < rows.length; i++)
+    for(let i = 0; i < rows.length; i ++)
     {
         if(ids.indexOf(rows[i].id) < 0)
         {
@@ -674,7 +774,7 @@ function getBestFloat(obj)
     let best = 1;
     for(let i = 0; i < obj.results.length; i ++)
     {
-        if(obj.results[i].float < best)
+        if(obj.results[i].float < best && typeof obj.results[i].float == "number")
             best = obj.results[i].float;
     }
     return best;
@@ -737,10 +837,10 @@ async function findListing(info)
     $("#listing_"+id).css("background-color", "rgba(38, 63, 149, 0.72)");
     await scanFloat();
     /*$(".market_listing_row")[0].scrollIntoView(
-        {
-            behavior: "smooth", // or "auto" or "instant"
-            block: "start" // or "end"
-        });*/
+     {
+     behavior: "smooth", // or "auto" or "instant"
+     block: "start" // or "end"
+     });*/
     $.LoadingOverlay("hide");
     window.location.hash = "";
 }
@@ -833,10 +933,14 @@ function loadSettings()
 {
     chrome.storage.sync.get(STORAGE_SETTINGS, setOptions);
 }
-function addSession(sessions, new_session, id)
+function addSession(sess, new_session, id)
 {
-    sessions[id] = new_session;
-    window.localStorage.setItem(STORAGE_SESSIONS, JSON.stringify(sessions));
+    sess[id] = new_session;
+    window.localStorage.setItem(STORAGE_SESSIONS, JSON.stringify(sess));
+}
+function getSessions()
+{
+    return sessions;
 }
 function removeSession(sessions, id)
 {

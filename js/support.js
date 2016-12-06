@@ -88,7 +88,7 @@ const SVG_ICON_CLEAR = "<svg xmlns=\"http://www.w3.org/2000/svg\" fill=\"#000000
     "<path d=\"M0 0h24v24H0z\" fill=\"none\"/>"+
     "</svg>";
 const NOTIFICATION_SCAN = "NOTIFICATION_SCAN";
-const API_URL = "http://api.csgofloat.com:1739/?url=";
+const API_URL = "https://api.csgofloat.com:1738/?url=";
 //const COUNTRY_CODE_API = "http://ip-api.com/json";
 /*
  This information is there in case of Chrome's Team security concerns.
@@ -96,7 +96,7 @@ const API_URL = "http://api.csgofloat.com:1739/?url=";
  The ip is never stored anywhere nor send to any external servers.
  Only used in the getCountryCode() function in popup.js file.
  */
-const ICON_URL = "http://steamcommunity-a.akamaihd.net/public/shared/images/responsive/share_steam_logo.png";
+const ICON_URL = "http://steamcommunity-a.akamaihd.net/economy/image/";
 const KEY_IGNORE = [112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 9, 192, 13, 16];
 const CURRENCIES = {
     1: {
@@ -212,7 +212,7 @@ const STORAGE_SETTINGS = "settings";
 const STORAGE_SESSIONS = "sessions";
 const TYPE_NOTIFY = "TYPE_NOTIFY";
 const TYPE_UPDATE_SETTINGS = "TYPE_UPDATE_SETTINGS";
-const IMG_TEMPLATE = "<img id=\"listing_%id%_image\" src=\"%icon_url%\" srcset=\"$icon_url%/62fx62f 1x, %icon_url%/62fx62fdpx2x 2x\" style=\"border-color: #D2D2D2;\" class=\"market_listing_item_img economy_item_hoverable\" alt=\"\">";
+const IMG_TEMPLATE = "<img id=\"listing_%id%_image\" src=\"%icon_url%\" srcset=\"%icon_url%/62fx62f 1x, %icon_url%/62fx62fdpx2x 2x\" style=\"border-color: #D2D2D2;\" class=\"market_listing_item_img economy_item_hoverable\" alt=\"\">";
 
 
 const SESSION_CONTAINER_TEMPLATE =
@@ -245,6 +245,16 @@ const DEFAULT_HEADER =
     "		<span class=\"market_listing_right_cell market_listing_their_price\">PRICE</span>"+
     "	</div>"+
     "	<span class=\"market_listing_right_cell market_listing_seller\">SELLER</span>"+
+    "	<div><span class=\"market_listing_header_namespacer\"></span>NAME</div>"+
+    "</div>";
+const DEFAULT_HEADER_WITH_FLOAT =
+    "<div class=\"market_listing_table_header\">"+
+    "	<div class=\"market_listing_price_listings_block\">"+
+    "		<span class=\"market_listing_right_cell market_listing_action_buttons\"></span>"+
+    "		<span class=\"market_listing_right_cell market_listing_their_price\">PRICE</span>"+
+    "	</div>"+
+    "	<span class=\"market_listing_right_cell market_listing_seller\">SELLER</span>"+
+    "	<span class=\"market_listing_right_cell market_listing_float\" style=\"width: 150px\">FLOAT</span>"+
     "	<div><span class=\"market_listing_header_namespacer\"></span>NAME</div>"+
     "</div>";
 const SESSIONS_HEADER =
@@ -294,7 +304,7 @@ const ROW_TEMPLATE = "<div class=\"market_listing_row market_recent_listing_row 
     "			</span>"+
     "		</span>"+
     "	</div>"+
-    "		<div class=\"market_listing_right_cell float_container\">"+
+    "		<div class=\"market_listing_right_cell float_container\" style=\"width: 150px\">"+
     "           <span class=\"market_listing_item_float\" style=\"%style%\">%info%</span>"+
     "       </div>"+
     "       <div class=\"market_listing_item_name_block\">"+

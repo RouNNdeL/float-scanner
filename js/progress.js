@@ -2,8 +2,9 @@ const LoadingOverlayProgress = function(options)
 {
     let _bar;
     let _text;
-    let _price;
+    let _info;
     let _amount;
+    let _progress;
     let _settings = $.extend(true, {}, {
         bar: {
             "bottom": "25px",
@@ -18,13 +19,14 @@ const LoadingOverlayProgress = function(options)
     }, options);
 
     return {
-        Init: Init,
-        Update: Update,
-        UpdatePrice: UpdatePrice,
-        UpdateAmount: UpdateAmount
+        init: init,
+        updateProgress: updateProgress,
+        updateBestInfo: updateBestInfo,
+        updateAmount: updateAmount,
+        getProgress: getProgress
     };
 
-    function Init()
+    function init()
     {
         const wrapper = $("<div>", {
             class: "loadingoverlay_progress_wrapper",
@@ -42,7 +44,7 @@ const LoadingOverlayProgress = function(options)
                     "width": "100%"
                 }
             }).appendTo(wrapper);
-        _price = $("<p>",
+        _info = $("<p>",
             {
                 class: "loading_overlay_progress_price",
                 css: {
@@ -82,27 +84,33 @@ const LoadingOverlayProgress = function(options)
             }, _settings.text),
             text: "0 %"
         }).appendTo(wrapper);
-        Update(0);
+        updateProgress(0, "");
         return wrapper;
     }
 
-    function Update(value)
+    function updateProgress(percentage, text, tracker)
     {
-        if(value < 0) value = 0;
-        if(value > 100) value = 100;
-        const r = {"right": (100-value)+"%"};
+        if(percentage < 0) percentage = 0;
+        if(percentage > 100) percentage = 100;
+        const r = {"right": (100-percentage)+"%"};
         _bar.css(r);
         _text.css(r);
-        _text.text(value+"%");
+        _text.text(text);
+        _progress = tracker;
     }
 
-    function UpdatePrice(value)
+    function updateBestInfo(value)
     {
-        _price.text(value);
+        _info.text(value);
     }
 
-    function UpdateAmount(value)
+    function updateAmount(value)
     {
         _amount.text(value);
+    }
+
+    function getProgress()
+    {
+        return _progress;
     }
 };

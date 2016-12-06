@@ -11,11 +11,10 @@
     "options_page": "html/popup.html",
     "permissions": [
         "activeTab",
-        "tabs",
         "storage",
         "notifications",
         "cookies",
-        "http://api.csgofloat.com:1739/",
+        "*://api.csgofloat.com/",
         "http://steamcommunity.com/market/*",
         "https://steamcommunity.com/market/*",
         "http://*.steamcommunity.com/market/*",
