@@ -8,7 +8,7 @@ body
 
 .wrapper
 {
-    padding: 24px 0 24px 0;
+    padding: 24px 0 0 0;
 }
 
 .setting
@@ -65,15 +65,29 @@ body
     position: relative;
 }
 
+.select-container
+{
+    margin: 0 4px 0 4px;
+    width: 200px;
+    height: auto;
+    position: relative;
+}
+
 #globals-container
 {
     position: fixed;
     height: 64px;
+    z-index: 100;
 }
 
 #settings_container
 {
     margin-top: 48px;
+}
+
+#currency-select-container
+{
+    margin-top: 4px;
 }
 
 input[type=color]

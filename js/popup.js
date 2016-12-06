@@ -75,6 +75,7 @@ function saveColor(event)
     const target = $(event.target);
     const tmp = $.extend(true, {}, settings);
     const parent = target.closest(".setting");
+    parent.find(".example").css("color", target.val());
     tmp.qualities[parent.attr("id")].css.color = target.val();
     setOptions(tmp, {notify: true, overwrite: false, reload: false});
 }
@@ -85,8 +86,8 @@ function saveSize(event)
     const parent = target.closest(".setting");
     const id = parent.attr("id");
     let size = parseInt(target.val().replace(/[^0-9]/g, ''));
-    if(size > 32)
-        size = 32;
+    if(size > 24)
+        size = 24;
     else if(size < 8)
         size = 8;
     $("#"+id+"-example").css("font-size", size+"px");
@@ -99,6 +100,7 @@ function saveWeight(event)
     const target = $(event.target);
     const tmp = $.extend(true, {}, settings);
     const parent = target.closest(".setting");
+    parent.find(".example").css("font-weight", target.val());
     tmp.qualities[parent.attr("id")].css["font-weight"] = target.val();
     setOptions(tmp, {notify: true, overwrite: false, reload: false});
 }
@@ -126,9 +128,18 @@ function saveDelay(event)
     const target = $(event.target);
     const tmp = $.extend(true, {}, settings);
     const step = parseInt(target.attr("step"));
-    const new_val = Math.round(target.val() / step) * step;
+    let new_val = Math.round(target.val() / step) * step;
+    if(new_val < 50)
+        new_val = 50;
     target.val(new_val);
-    tmp.search_delay = new_val;
+    tmp.request_delay = new_val;
+    setOptions(tmp, {notify: true, overwrite: false, reload: false});
+}
+function saveCurrency(event)
+{
+    const target = $(event.target);
+    const tmp = $.extend(true, {}, settings);
+    tmp.currency = target.val();
     setOptions(tmp, {notify: true, overwrite: false, reload: false});
 }
 function resetToDefaults(event)
@@ -148,6 +159,29 @@ function addRule(event)
     const tmp = $.extend(true, {}, settings);
     tmp.qualities.push(settings.defaults);
     setOptions(tmp, {notify: true, reload: true, overwrite: true, scroll_to: settings.qualities.length-1})
+}
+/*function reloadExample(sett)
+ {
+ const parents = $(".setting");
+ parents.forEach(function(i)
+ {
+ const ex = $(this).find(".example");
+ const id = $(this).attr(id);
+
+ });
+ }*/
+function setupCurrencySelect(currencies, select)
+{
+    for(let k in currencies)
+    {
+        if(! currencies.hasOwnProperty(k) || ! currencies[k].hasOwnProperty("name") || ! currencies[k].hasOwnProperty("symbol"))
+            continue;
+        const option = $("<option>", {
+            value: k,
+            text: currencies[k].name+" ("+currencies[k].symbol+")"
+        });
+        select.append(option);
+    }
 }
 function loadHTML(sett, scroll = null)
 {
@@ -179,7 +213,7 @@ function loadHTML(sett, scroll = null)
         $("#"+id+"-filter").prop("checked", id == filter);
         select.val(weight);
         select.material_select();
-        example.text(formatInfo(sett, id, Math.random(), Math.round(Math.random()*100)));
+        example.text(formatInfo(sett, id, Math.random(), Math.round(Math.random() * 100)));
     }
 
     $("#global-container").scrollSpy();
@@ -187,7 +221,8 @@ function loadHTML(sett, scroll = null)
     if(scroll != null)
         $('body').animate({scrollLeft: $("body").outerWidth()}, 750);
 
-    $(window).scroll(function(){
+    $(window).scroll(function()
+    {
         const outer = parseInt($("#globals-container").closest(".holder").position().top);
         $("#globals-container").css("top", - $(window).scrollTop()+outer);
     });
@@ -200,12 +235,16 @@ function loadHTML(sett, scroll = null)
     const format = $("input[type=text].format");
     const filter = $("input[type=radio].filter");
 
+    const currency = $("#currency-select");
     const delay = $("input[type=number]#search-delay");
     const del = $("i.delete");
     const reset = $("#btn-reset");
     const add = $("#btn-add");
 
-    delay.val(sett.search_delay);
+    delay.val(sett.request_delay);
+    setupCurrencySelect(CURRENCIES, currency);
+    currency.val(sett.currency);
+    currency.material_select();
 
     title.on("dblclick", editName).addClass("bound");
     limit.change(saveNumber).addClass("bound");
@@ -215,11 +254,16 @@ function loadHTML(sett, scroll = null)
     format.change(saveFormat).addClass("bound");
     filter.change(saveFilter).addClass("bound");
 
+    currency.change(saveCurrency).addClass("bound");
     delay.change(saveDelay).addClass("bound");
     del.click(delRule).addClass("bound");
     reset.click(resetToDefaults).addClass("bound");
     add.click(addRule).addClass("bound");
 }
+/*async function getCountryCode()
+ {
+ return call(COUNTRY_CODE_API, "json").countryCode;
+ }*/
 function generateSetting(name, value, color, size, weight, format, id)
 {
     return "<div class=\"row small-margin setting\" id=\""+id+"\" style=\"margin: 5px;\">"+
@@ -267,6 +311,22 @@ function generateSetting(name, value, color, size, weight, format, id)
         "    </div>"+
         "</div>";
 }
+
+function getCountryCodeFromCookies()
+{
+    chrome.cookies.get({
+        name: "steamCountry",
+        url: "http://steamcommunity.com/market/"
+    }, onCountryCodeLoaded)
+}
+
+function onCountryCodeLoaded(cookie)
+{
+    const tmp = $.extend(true, {}, settings);
+    tmp.country = cookie.value;
+    setOptions(tmp, {});
+}
+
 function setOptions(set, options = {})
 {
     const defaults = {
@@ -276,6 +336,7 @@ function setOptions(set, options = {})
         save: true,
         scroll_to: null
     };
+
     const savingSettings = $.extend({}, defaults, options);
     if(savingSettings.overwrite)
         settings = $.extend(true, {}, set[STORAGE_SETTINGS] || set);
