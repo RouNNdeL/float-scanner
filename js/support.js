@@ -25,6 +25,10 @@ String.prototype.replaceAll = function(search, replacement)
 {
     return this.replace(new RegExp(search, 'g'), replacement);
 };
+String.prototype.escapeRegExp = function()
+{
+    return this.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+};
 function sleep(ms)
 {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -54,10 +58,6 @@ function getCookie(cname)
     }
     return "";
 }
-String.prototype.escapeRegExp = function()
-{
-    return this.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
-};
 function formatInfo(sett, tier, float, quality)
 {
     let info;
@@ -81,7 +81,10 @@ function formatInfo(sett, tier, float, quality)
     }
     return info;
 }
-
+function byteCount(s)
+{
+    return s.length * 2;
+}
 //Constants
 const SVG_ICON_CLEAR = "<svg xmlns=\"http://www.w3.org/2000/svg\" fill=\"#000000\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\">"+
     "<path d=\"M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z\"/>"+
@@ -189,6 +192,7 @@ const DEFAULT_SETTINGS = {
             "font-weight": "bold"
         }
     },
+    cache_size: 0, //Not really a setting, but its easier to pass it that way
     filter_by: 1,
     currency: 1,
 

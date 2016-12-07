@@ -20,6 +20,7 @@ $(function()
     chrome.runtime.onMessage.addListener(onMessageListener);
 
     setup("#market_buyorder_info", buttons);
+    setupCacheInfo(Math.floor(byteCount(JSON.stringify(getListings())) * 100 / 1024) / 100);
 });
 $(document).keyup(function(e)
 {
@@ -408,6 +409,25 @@ async function scanFloat()
     in_progress = false;
     return {results: result, game: game, img: img, name: name};
 }
+function setupCacheInfo(size)
+{
+    $("#cache_info").remove();
+    const parent = $("#listings");
+    const after = $("#market_listing_filter_form").closest(".market_listing_filter");
+    const container = $("<div>", {
+        class: "market_listing_filter",
+        id: "cache_info"
+    });
+    const content_container = $("<div>", {
+        class: "market_listing_filter_contents"
+    });
+    const btn = generateButton("Clear cache", clearListings);
+    const content = $.parseHTML("<h2 class=\"market_section_title\">Cache</h2>Cache size: "+size+"kb");
+    content_container.append(btn);
+    content_container.append(content);
+    container.append(content_container);
+    container.insertAfter(after);
+}
 function setupFloatContainer(float, quality, sett)
 {
     const qualities = sett.qualities;
@@ -602,7 +622,6 @@ function showResults(session, sett, filter, overtwrie = true)
         $(".market_listing_table_header").remove();
         con.prepend($.parseHTML(DEFAULT_HEADER_WITH_FLOAT));
     }
-    console.log(filtered_results);
     for(let i = 0; i < display.length; i ++)
     {
         const row = $(display[i]);
@@ -982,6 +1001,14 @@ function clearSessions()
 {
     window.localStorage.removeItem(STORAGE_SESSIONS);
 }
+function saveAllListings(lists)
+{
+    const tmp = $.extend(true, {}, getSettings());
+    tmp.cache_size = byteCount(JSON.stringify(lists));
+    saveSettings(tmp);
+    window.localStorage.setItem(STORAGE_LISTINGS, JSON.stringify(lists));
+    setListings();
+}
 function addListing(lists, id, new_listing)
 {
     const itemName = getNameFromUrl();
@@ -989,8 +1016,7 @@ function addListing(lists, id, new_listing)
         lists[itemName] = {};
     lists[itemName][id] = new_listing;
     const new_lists = $.extend(true, {}, getAllListings(), lists);
-    window.localStorage.setItem(STORAGE_LISTINGS, JSON.stringify(new_lists));
-    setListings();
+    saveAllListings(new_lists);
 }
 function getListings()
 {
@@ -998,18 +1024,24 @@ function getListings()
 }
 function setListings()
 {
-    let allListings = $.parseJSON(window.localStorage.getItem(STORAGE_LISTINGS));
-    if(allListings == null || allListings == undefined)
-    {
-        allListings = {};
-        window.localStorage.setItem(STORAGE_LISTINGS, JSON.stringify(allListings))
-    }
+    let allListings = getAllListings();
     listings = allListings[getNameFromUrl()] || {};
+    setupCacheInfo(Math.floor(
+            byteCount(
+                JSON.stringify(getListings())) * 100 / 1024
+        ) / 100
+    );
 }
-function clearListings()
+function clearAllListings()
 {
     window.localStorage.removeItem(STORAGE_LISTINGS);
     setListings();
+}
+function clearListings()
+{
+    const allListings = getAllListings();
+    delete allListings[getNameFromUrl()];
+    saveAllListings(allListings);
 }
 function getAllListings()
 {
@@ -1019,11 +1051,11 @@ function getNameFromUrl(url = null)
 {
     const regex = /steamcommunity\.com\/market\/listings\/730\/(.+)\/?/;
     if(url !== undefined && url !== null && regex.exec(url).length > 0)
-        return regex.exec(url)[1];
+        return encodeURI(decodeURI(regex.exec(url)[1]));
     const exec = regex.exec(window.location.href.replace(window.location.hash, ""));
     if(exec == null || exec == undefined || exec[1] == null || exec[1] == undefined)
         return {};
-    return exec[1];
+    return encodeURI(decodeURI(exec[1]));
 }
 function onMessageListener(request, sender, callback)
 {
@@ -1034,7 +1066,7 @@ function onMessageListener(request, sender, callback)
     }
     if(request.type == TYPE_CLEAR_CACHE)
     {
-        clearListings();
+        clearAllListings();
         callback(true);
     }
 }

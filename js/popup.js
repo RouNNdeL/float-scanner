@@ -169,7 +169,12 @@ function clearCache(event)
         {
             disp = true;
             if(resp)
+            {
                 Materialize.toast("Success!", 2500);
+                const tmp = $.extend(true, {}, settings);
+                tmp.cache_size = 0;
+                setOptions(tmp, {notify: false, reload: true});
+            }
             else
             {
                 Materialize.toast("Failure!", 2500);
@@ -264,6 +269,7 @@ function loadHTML(sett, scroll = null)
     setupCurrencySelect(CURRENCIES, currency);
     currency.val(sett.currency);
     currency.material_select();
+    clear.text("Clear listing cache ("+Math.floor((sett.cache_size / 1024) * 100) / 100+"kb)")
 
     title.on("dblclick", editName).addClass("bound");
     limit.change(saveNumber).addClass("bound");
