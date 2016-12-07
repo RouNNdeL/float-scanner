@@ -16,6 +16,7 @@ $(function()
     loadSettings();
     setSessions();
     setListings();
+    clearListingsOlderThen(5);
 
     chrome.runtime.onMessage.addListener(onMessageListener);
 
@@ -61,6 +62,7 @@ function hashActions(sess)
 {
     const session_match = window.location.hash.match(/session_id=(\d+)/);
     const search_match = window.location.hash.match(/search=(.+)/);
+    const filter_match = window.location.hash.match(/filter=(\d+)/);
     if(session_match && session_match[1])
     {
         const sid = parseInt(session_match[1]);
@@ -72,7 +74,11 @@ function hashActions(sess)
     if(search_match && search_match[1])
     {
         const info = search_match[1];
-        findListing(info);
+        findListingNew(info);
+    }
+    if(filter_match && filter_match[1])
+    {
+        filterListing(filter_match[1]);
     }
 
 }
@@ -86,11 +92,11 @@ function buttons()
     scan_btn.insertBefore(before);
 
     //Batch scan button
-    const batch_scan_btn = generateButton("Scan floats", scan);
-    batch_scan_btn.insertBefore(before);
+    /*const batch_scan_btn = generateButton("Scan floats", scan);
+     batch_scan_btn.insertBefore(before);*/
 
     //Better scan buttons
-    const better_scan_btn = generateButton("Better scan", betterScan);
+    const better_scan_btn = generateButton("Scan floats", betterScan);
     better_scan_btn.insertBefore(before);
 }
 function generateButton(txt, onclick = null)
@@ -144,6 +150,7 @@ async function generateFloats(raw_json, sett, progress, count, lists, obj)
                 r = await ajaxCall(link, "json");
                 const info = r.iteminfo;
                 const stripped = {
+                    date: Date.now(),
                     iteminfo: {
                         floatvalue: info.floatvalue,
                         min: info.min,
@@ -269,10 +276,10 @@ async function betterScan()
                 "background": "#16202D",
                 "bottom": "100px",
                 "height": "30px"/*,
-                "-webkit-transition": "all 1s linear",
-                "-moz-transition": "all 1s linear",
-                "-o-transition": "all 1s linear",
-                "-ms-transition": "all 1s linear",
+                 "-webkit-transition": "all 1s linear",
+                 "-moz-transition": "all 1s linear",
+                 "-o-transition": "all 1s linear",
+                 "-ms-transition": "all 1s linear",
                  "transition": "all 1s linear",*/
             },
             text: {
@@ -280,10 +287,10 @@ async function betterScan()
                 "color": "#16202D",
                 "bottom": "135px",
                 "font-size": "32px"/*,
-                "-webkit-transition": "all 1s linear",
-                "-moz-transition": "all 1s linear",
-                "-o-transition": "all 1s linear",
-                "-ms-transition": "all 1s linear",
+                 "-webkit-transition": "all 1s linear",
+                 "-moz-transition": "all 1s linear",
+                 "-o-transition": "all 1s linear",
+                 "-ms-transition": "all 1s linear",
                  "transition": "all 1s linear",*/
             }
         });
@@ -889,6 +896,82 @@ async function findListing(info)
     $.LoadingOverlay("hide");
     window.location.hash = "";
 }
+async function findListingNew(info)
+{
+    const sett = getSettings();
+    const params = $.parseJSON(decodeURI(info));
+    const id = params.id;
+    const name = params.name;
+    const price = parseFloat(params.price.replace(/[^\d,.]/gm, "").replace(/,/, "."));
+    if(id == undefined || id == null || name == undefined || name == null || price == undefined || price == null)
+        return 0;
+    $.LoadingOverlay("show");
+    con = true;
+    searching = true;
+    const url = decodeURI(window.location.href.replace(window.location.hash, ""));
+    if(! url.match(name.escapeRegExp()))
+    {
+        window.location.href =
+            "https://steamcommunity.com/market/listings/730/"+encodeURI(name)+
+            "#search="+encodeURI(JSON.stringify(params));
+        $.LoadingOverlay("hide");
+        return 0;
+    }
+    let current_price = 0;
+    let start = 0;
+    const max_count = 100;
+    const check = await getMultipleListings(
+        window.location.href.replace(window.location.hash, ""),
+        0,
+        10,
+        sett.currency,
+        sett.lang
+    );
+    if(check.success != true)
+        return obj;
+
+    let count = check.total_count;
+    let page = 0;
+    while(current_price < price * (1+(sett.search_threshold / 100)) && con)
+    {
+        await sleep(sett.request_delay);
+        const json = await getMultipleListings(
+            window.location.href.replace(window.location.hash, ""),
+            start,
+            Math.min(count, max_count),
+            sett.currency,
+            sett.lang
+        );
+        const parsed = $.parseHTML(json.results_html);
+        const tempDom = $('<div>').append(parsed);
+        const price_container = $(".market_listing_price_with_fee", tempDom);
+        price_container.each(function(i)
+        {
+            const s = $(this).text().replace(/[^\d,.]/gm, "").replace(/,/, ".");
+            const price = parseFloat(s);
+            current_price = Math.max(current_price, price);
+        });
+        const target = $("#listing_"+id, tempDom);
+        const rows = $(".market_listing_row", tempDom);
+        const index = rows.index(target);
+        console.log(index);
+        if(index > - 1)
+        {
+            const new_url = window.location.href.replace(window.location.hash, "")+"?count=25&start="+(page * 100+index-12)+"&language="+sett.lang+"&currency="+sett.currency+"#filter="+id;
+            window.location.replace(new_url);
+        }
+        page += 1;
+        start += 100;
+    }
+    /*await scanFloat();
+     $.LoadingOverlay("hide");
+     window.location.hash = "";*/
+}
+function filterListing(id)
+{
+    $(".market_listing_row").not("#listing_"+id).remove();
+    scanFloat();
+}
 function ajaxCall(url, type)
 {
     return new Promise(resolve =>
@@ -930,6 +1013,36 @@ function getTier(settings, quality)
         }
     }
     return best;
+}
+function injectAssets(assets)
+{
+    if(assets == null || assets == undefined)
+        return 0;
+    const script = $("<script>");
+    script.text("g_rgAssets = $J.parseJSON('"+JSON.stringify(assets).escapeJSON()+"')");
+    $("body").prepend(script);
+}
+function injectListings(lists)
+{
+    if(lists == null || lists == undefined)
+        return 0;
+    const script = $("<script>");
+    script.text("g_rgListingInfo = $J.parseJSON('"+JSON.stringify(lists).escapeJSON()+"')");
+    $("body").prepend(script);
+}
+function injectHovers(hovers)
+{
+    if(hovers == null || hovers == undefined)
+        return 0;
+    const script = $("<script>");
+    script.text(hovers);
+    $("body").prepend(script);
+}
+function injectActionButtonSetup()
+{
+    const script = $("<script>");
+    script.text("InstallMarketActionMenuButtons();zc ");
+    $("body").prepend(script);
 }
 function setup(selector, callback, n = 0)
 {
@@ -1043,13 +1156,31 @@ function clearListings()
     delete allListings[getNameFromUrl()];
     saveAllListings(allListings);
 }
+function clearListingsOlderThen(minutes)
+{
+    const deadline = minutes * 60 * 1000;
+    const now = Date.now();
+    const allListings = getAllListings();
+    for(let k in allListings)
+    {
+        if(! allListings.hasOwnProperty(k))
+            continue;
+        for(let l in allListings[k])
+        {
+            if(! allListings[k].hasOwnProperty(l))
+                continue;
+            if(allListings[k][l].date+deadline < now)
+                delete allListings[k][l];
+        }
+    }
+}
 function getAllListings()
 {
     return ($.parseJSON(window.localStorage.getItem(STORAGE_LISTINGS)) || {});
 }
 function getNameFromUrl(url = null)
 {
-    const regex = /steamcommunity\.com\/market\/listings\/730\/(.+)\/?/;
+    const regex = /steamcommunity\.com\/market\/listings\/730\/(.+)[#\/\?]+/;
     if(url !== undefined && url !== null && regex.exec(url).length > 0)
         return encodeURI(decodeURI(regex.exec(url)[1]));
     const exec = regex.exec(window.location.href.replace(window.location.hash, ""));

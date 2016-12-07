@@ -29,6 +29,10 @@ String.prototype.escapeRegExp = function()
 {
     return this.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
 };
+String.prototype.escapeJSON = function()
+{
+    return this.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|\'\"]/g, "\\$&");
+};
 function sleep(ms)
 {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -61,6 +65,8 @@ function getCookie(cname)
 function formatInfo(sett, tier, float, quality)
 {
     let info;
+    if(float == null || float == undefined)
+        float = 1;
     if(! (tier == undefined || tier == null))
     {
         const match = sett.qualities[tier].format.match(/\$f\{(\d+)}/) || [];
@@ -219,6 +225,26 @@ const TYPE_NOTIFY = "TYPE_NOTIFY";
 const TYPE_UPDATE_SETTINGS = "TYPE_UPDATE_SETTINGS";
 const TYPE_CLEAR_CACHE = "TYPE_CLEAR_CACHE";
 const IMG_TEMPLATE = "<img id=\"listing_%id%_image\" src=\"%icon_url%\" srcset=\"%icon_url%/62fx62f 1x, %icon_url%/62fx62fdpx2x 2x\" style=\"border-color: #D2D2D2;\" class=\"market_listing_item_img economy_item_hoverable\" alt=\"\">";
+
+const ACTION_BUTTON_SETUP_FUNCTION =
+    "function InstallMarketActionMenuButtons()"+
+    "    {"+
+    "        for ( var listing in g_rgListingInfo ) {"+
+    "            var asset = g_rgListingInfo[listing].asset;"+
+    "            if ( typeof g_rgAssets[asset.appid][asset.contextid][asset.id].market_actions != 'undefined' )"+
+    "            {"+
+    "                /* add the context menu*/"+
+    "                var elActionMenuButton = $J('<a></a>');"+
+    "                elActionMenuButton.attr( 'id', 'listing_' + listing + '_actionmenu_button' );"+
+    "                elActionMenuButton.addClass( 'market_actionmenu_button' );"+
+    "                elActionMenuButton.attr( 'href', 'javascript:void(0)' );"+
+    "                $J('#listing_' + listing + '_image').parent().append( elActionMenuButton );"+
+    "                $J(elActionMenuButton).click( $J.proxy( function( elButton, rgAsset ) {"+
+    "                    HandleMarketActionMenu( elButton.attr( 'id' ), g_rgAssets[rgAsset.appid][rgAsset.contextid][rgAsset.id] );"+
+    "                }, null, elActionMenuButton, asset ) );"+
+    "            }"+
+    "        }"+
+    "    }";
 
 
 const SESSION_CONTAINER_TEMPLATE =
