@@ -47,6 +47,7 @@ $(window).on("hashchange", function(e)
 {
     hashActions(getSessions());
 });
+$(window).on("popstate", handlePopStateEvent);
 async function onOptionsLoaded(max_tries = 100)
 {
     let tries = 0;
@@ -61,13 +62,23 @@ async function onOptionsLoaded(max_tries = 100)
     if(window.location.href.match(/steamcommunity.com\/market\/?$/))
         showSessionsOnMain(ses, getSettings());
 }
+function handlePopStateEvent(e)
+{
+    if(scanning)
+        con = false;
+
+}
 function hashActions(sess)
 {
     const session_match = window.location.hash.match(/session_id=(\d+)/);
     const search_match = window.location.hash.match(/search=(.+)/);
     const filter_match = window.location.hash.match(/filter=(\d+)/);
+    const scan_match = window.location.hash.match(/scan=(\d+)/);
+    let remove_hash = true;
     if(session_match && session_match[1])
     {
+        remove_hash = false;
+
         const sid = parseInt(session_match[1]);
         if(sess[sid])
             showResults(sess[sid], getSettings());
@@ -83,7 +94,12 @@ function hashActions(sess)
     {
         filterListing(filter_match[1]);
     }
-
+    if(scan_match && scan_match[1])
+    {
+        betterScan(parseInt(scan_match[1]));
+    }
+    if(remove_hash)
+        window.history.replaceState({}, document.title, window.location.pathname);
 }
 function buttons()
 {
@@ -95,11 +111,11 @@ function buttons()
     scan_btn.insertBefore(before);
 
     //Batch scan button
-    /*const batch_scan_btn = generateButton("Scan floats", scan);
+    /*const batch_scan_btn = generateButton("Scan floats", scan());
      batch_scan_btn.insertBefore(before);*/
 
     //Better scan buttons
-    const better_scan_btn = generateButton("Scan floats", betterScan);
+    const better_scan_btn = generateButton("Scan floats", initializeScan);
     better_scan_btn.insertBefore(before);
 }
 function generateButton(txt, onclick = null)
@@ -271,8 +287,12 @@ async function scanMultipleFloats(count, sett, progress, lists)
     }
     return obj;
 }
-
-async function betterScan()
+function initializeScan()
+{
+    const count = prompt("Input number of items to  scan");
+    window.location.href = "#scan="+count;
+}
+async function betterScan(count)
 {
     if(scanning)
         return 0;
@@ -282,27 +302,27 @@ async function betterScan()
                 "position": "absolute",
                 "background": "#16202D",
                 "bottom": "100px",
-                "height": "30px"/*,
+                "height": "30px",
                  "-webkit-transition": "all 1s linear",
                  "-moz-transition": "all 1s linear",
                  "-o-transition": "all 1s linear",
                  "-ms-transition": "all 1s linear",
-                 "transition": "all 1s linear",*/
+                "transition": "all 1s linear",
             },
             text: {
                 "position": "absolute",
                 "color": "#16202D",
                 "bottom": "135px",
-                "font-size": "32px"/*,
+                "font-size": "32px",
                  "-webkit-transition": "all 1s linear",
                  "-moz-transition": "all 1s linear",
                  "-o-transition": "all 1s linear",
                  "-ms-transition": "all 1s linear",
-                 "transition": "all 1s linear",*/
+                "transition": "all 1s linear",
             }
         });
-    const count = prompt("Input number of ITEMS");
-    if(count < 1)
+    //const count = prompt("Input number of ITEMS");
+    if(count < 1 || isNaN(count))
         return 0;
     scanning = true;
     con = true;
@@ -471,6 +491,10 @@ function scanPage()
     });
     return result;
 }
+/**
+ * @deprecated Use betterScan() from now on
+ * @returns {number} Status
+ */
 async function scan()
 {
     if(scanning)
@@ -558,6 +582,7 @@ async function scan()
     );
     scanning = false;
     $.LoadingOverlay("hide");
+    return 1;
 }
 async function nextPage(maxTries = 60)
 {
@@ -850,6 +875,11 @@ function getBestQuality(obj)
     }
     return best;
 }
+/**
+ * @deprecated Use findListingNew() from now on
+ * @param {string} info
+ * @returns {number}
+ */
 async function findListing(info)
 {
     const params = $.parseJSON(decodeURI(info));
@@ -903,6 +933,11 @@ async function findListing(info)
     $.LoadingOverlay("hide");
     window.location.hash = "";
 }
+/**
+ *
+ * @param {string} info
+ * @returns {number}
+ */
 async function findListingNew(info)
 {
     const sett = getSettings();
@@ -966,7 +1001,7 @@ async function findListingNew(info)
         sett.lang
     );
     if(check.success != true)
-        return obj;
+        return 0;
 
     let found = false;
     let count = check.total_count;
@@ -1002,7 +1037,7 @@ async function findListingNew(info)
         const target = $("#listing_"+id, tempDom);
         const rows = $(".market_listing_row", tempDom);
         const index = rows.index(target);
-        if(index > - 1)
+        if(index > - 1 && con)
         {
             const new_url = window.location.href.replace(window.location.hash, "")
                 +"?count="+sett.search_precaution
@@ -1029,6 +1064,7 @@ async function findListingNew(info)
         $.LoadingOverlay("hide");
         window.location.replace(window.location.href.replace(window.location.hash, ""));
     }
+    return 1;
 }
 function filterListing(id)
 {

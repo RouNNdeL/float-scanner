@@ -215,7 +215,7 @@ const DEFAULT_SETTINGS = {
     float_places: 3,
     request_delay: 5000,
     search_threshold: 2, /*Value for price overdue in percentage before canceling search */
-    search_precaution: 75, /*How many results to display and then filtter while searching for a listing. Max: 100 (Steam limitations)*/
+    search_precaution: 100, /*How many results to display and then filtter while searching for a listing. Max: 100 (Steam limitations)*/
     date_format: "H:MM, m/d/yy",
     row_background: "#16202D",
     example_font: "Arial, Helvetica, Verdana, sans-serif"
