@@ -208,6 +208,7 @@ const DEFAULT_SETTINGS = {
     },
     cache_size: 0, //Not really a setting, but its easier to pass it that way
     filter_by: 1,
+    session_threshold: 0,
     currency: 1,
 
     lang: "english",

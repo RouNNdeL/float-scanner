@@ -124,6 +124,16 @@ function saveFilter(event)
     tmp.filter_by = id;
     setOptions(tmp, {notify: true, overwrite: false, reload: false});
 }
+function saveSessionThreshold(event)
+{
+    const target = $(event.target);
+    const tmp = $.extend(true, {}, settings);
+    const parent = target.closest(".setting");
+    const id = parent.attr("id");
+    $(".session_threshold").not(target).prop("checked", false);
+    tmp.session_threshold = id;
+    setOptions(tmp, {notify: true, overwrite: false, reload: false});
+}
 function saveDelay(event)
 {
     const target = $(event.target);
@@ -228,6 +238,7 @@ function loadHTML(sett, scroll = null)
         const size = qualities[i].css["font-size"] || DEFAULT_SETTINGS.defaults.css["font-size"];
         const weight = qualities[i].css["font-weight"] || DEFAULT_SETTINGS.defaults.css["font-weight"];
         const filter = sett.filter_by;
+        const session_threshold = sett.session_threshold;
         const id = i;
         const setting = $.parseHTML(generateSetting(name, limit, color, size, weight, format, id));
 
@@ -235,6 +246,7 @@ function loadHTML(sett, scroll = null)
         const select = $("#"+id+"-weight");
         const example = $("#"+id+"-example");
         $("#"+id+"-filter").prop("checked", id == filter);
+        $("#"+id+"-session_threshold").prop("checked", id == session_threshold);
         select.val(weight);
         select.material_select();
         example.text(formatInfo(sett, id, Math.random(), Math.round(Math.random() * 100)));
@@ -258,6 +270,7 @@ function loadHTML(sett, scroll = null)
     const weight = $("select.weight");
     const format = $("input[type=text].format");
     const filter = $("input[type=radio].filter");
+    const session_threshold = $("input[type=radio].session_threshold");
 
     const currency = $("#currency-select");
     const delay = $("input[type=number]#search-delay");
@@ -279,6 +292,7 @@ function loadHTML(sett, scroll = null)
     weight.change(saveWeight).addClass("bound");
     format.change(saveFormat).addClass("bound");
     filter.change(saveFilter).addClass("bound");
+    session_threshold.change(saveSessionThreshold).addClass("bound");
 
     currency.change(saveCurrency).addClass("bound");
     delay.change(saveDelay).addClass("bound");
@@ -298,6 +312,8 @@ function generateSetting(name, value, color, size, weight, format, id)
         "        <div class=\"card-content white-text\">"+
         "            <input type=\"radio\" class=\"filter\" id=\""+id+"-filter\">"+
         "            <label for=\""+id+"-filter\">Default filter</label>"+
+        "            <input type=\"radio\" class=\"session_threshold\" id=\""+id+"-session_threshold\">"+
+        "            <label for=\""+id+"-session_threshold\">Include in sessions</label>"+
         "            <div class=\"row small-margin\">"+
         "                <i class=\"material-icons md-dark right delete no-select\" id=\""+id+"-delete\">close</i>"+
         "                <div class=\"title-container\">"+

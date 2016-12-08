@@ -303,22 +303,22 @@ async function betterScan(count)
                 "background": "#16202D",
                 "bottom": "100px",
                 "height": "30px",
-                 "-webkit-transition": "all 1s linear",
-                 "-moz-transition": "all 1s linear",
-                 "-o-transition": "all 1s linear",
-                 "-ms-transition": "all 1s linear",
-                "transition": "all 1s linear",
+                "-webkit-transition": "all 0.5s linear",
+                "-moz-transition": "all 0.5s linear",
+                "-o-transition": "all 0.5s linear",
+                "-ms-transition": "all 0.5s linear",
+                "transition": "all 0.5s linear",
             },
             text: {
                 "position": "absolute",
                 "color": "#16202D",
                 "bottom": "135px",
                 "font-size": "32px",
-                 "-webkit-transition": "all 1s linear",
-                 "-moz-transition": "all 1s linear",
-                 "-o-transition": "all 1s linear",
-                 "-ms-transition": "all 1s linear",
-                "transition": "all 1s linear",
+                "-webkit-transition": "all 0.5s linear",
+                "-moz-transition": "all 0.5s linear",
+                "-o-transition": "all 0.5s linear",
+                "-ms-transition": "all 0.5s linear",
+                "transition": "all 0.5s linear",
             }
         });
     //const count = prompt("Input number of ITEMS");
@@ -332,13 +332,14 @@ async function betterScan(count)
     progress.updateBestInfo("Starting scan");
     progress.updateProgress(0, "0/"+count, 0);
 
-    const new_ses = await scanMultipleFloats(count, /*$.extend(true, {}, getSettings(), {currency: 2})*/getSettings(), progress, getListings());
+    const sett = getSettings();
+    const new_ses = await scanMultipleFloats(count, /*$.extend(true, {}, getSettings(), {currency: 2})*/sett, progress, getListings());
 
     progress.updateBestInfo("Setting up the view...");
     progress.updateAmount("Please be patient");
 
     const sid = Math.abs(Date.now());
-    addSession(getSessions(), new_ses, sid);
+    addSession(getSessions(), filterRows(new_ses, sett, sett.session_threshold), sid);
     await sleep(1000);
 
     window.location.hash = "#session_id="+sid;
@@ -955,22 +956,22 @@ async function findListingNew(info)
                 "background": "#16202D",
                 "bottom": "100px",
                 "height": "30px"/*,
-                 "-webkit-transition": "all 1s linear",
-                 "-moz-transition": "all 1s linear",
-                 "-o-transition": "all 1s linear",
-                 "-ms-transition": "all 1s linear",
-                 "transition": "all 1s linear",*/
+                 "-webkit-transition": "all 0.5s linear",
+                 "-moz-transition": "all 0.5s linear",
+                 "-o-transition": "all 0.5s linear",
+                 "-ms-transition": "all 0.5s linear",
+                 "transition": "all 0.5s linear",*/
             },
             text: {
                 "position": "absolute",
                 "color": "#16202D",
                 "bottom": "135px",
                 "font-size": "32px"/*,
-                 "-webkit-transition": "all 1s linear",
-                 "-moz-transition": "all 1s linear",
-                 "-o-transition": "all 1s linear",
-                 "-ms-transition": "all 1s linear",
-                 "transition": "all 1s linear",*/
+                 "-webkit-transition": "all 0.5s linear",
+                 "-moz-transition": "all 0.5s linear",
+                 "-o-transition": "all 0.5s linear",
+                 "-ms-transition": "all 0.5s linear",
+                 "transition": "all 0.5s linear",*/
             }
         });
     con = true;
