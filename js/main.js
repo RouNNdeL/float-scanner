@@ -23,7 +23,7 @@ $(function()
     chrome.runtime.onMessage.addListener(onMessageListener);
 
     setup("#market_buyorder_info", buttons);
-    setupCacheInfo(Math.floor(byteCount(LZString.compress(JSON.stringify(getListings()))) * 100 / 1024) / 100);
+    //setupCacheInfo(Math.floor(byteCount(LZString.compress(JSON.stringify(getListings()))) * 100 / 1024) / 100);
 });
 $(document).keyup(function(e)
 {
@@ -144,7 +144,9 @@ async function generateFloats(raw_json, sett, progress, count, lists, obj)
             let r;
             if(lists.hasOwnProperty(k))
             {
-                r = lists[k];
+                r = {};
+                const raw = lists[k];
+                r.iteminfo = {floatvalue: raw.i.fv, item_name: raw.i.n, min: raw.i.m, max: raw.i.x};
                 await sleep(20);
             }
             else
@@ -152,15 +154,15 @@ async function generateFloats(raw_json, sett, progress, count, lists, obj)
                 r = await ajaxCall(link, "json");
                 const info = r.iteminfo;
                 const stripped = {
-                    date: Date.now(),
-                    iteminfo: {
-                        floatvalue: info.floatvalue,
-                        min: info.min,
-                        max: info.max,
-                        item_name: info.item_name
+                    d: Date.now(),
+                    i: {
+                        fv: info.floatvalue,
+                        m: info.min,
+                        x: info.max,
+                        n: info.item_name
                     }
                 };
-                addListing(lists, k, stripped);
+                addListing(k, stripped);
             }
             const info = r.iteminfo;
             const f = info.floatvalue;
@@ -957,10 +959,14 @@ async function findListingNew(info)
         const target = $("#listing_"+id, tempDom);
         const rows = $(".market_listing_row", tempDom);
         const index = rows.index(target);
-        console.log(index);
         if(index > - 1)
         {
-            const new_url = window.location.href.replace(window.location.hash, "")+"?count=25&start="+(page * 100+index-12)+"&language="+sett.lang+"&currency="+sett.currency+"#filter="+id;
+            const new_url = window.location.href.replace(window.location.hash, "")
+                +"?count="+sett.search_precaution
+                +"&start="+Math.max((page * 100+index-Math.floor(Math.min(sett.search_precaution, max_count) / 2)), 0)
+                +"&language="+sett.lang
+                +"&currency="+sett.currency
+                +"#filter="+id;
             window.location.replace(new_url);
         }
         page += 1;
@@ -1126,13 +1132,14 @@ function clearSessions()
 {
     window.localStorage.removeItem(STORAGE_SESSIONS);
 }
-function addListing(lists, id, new_listing)
+function addListing(id, new_listing)
 {
     const itemName = getNameFromUrl();
-    if(! lists.hasOwnProperty(itemName))
-        lists[itemName] = {};
-    lists[itemName][id] = new_listing;
-    const new_lists = $.extend(true, {}, getAllListings(), lists);
+    const all_lists = getAllListings();
+    if(! all_lists.hasOwnProperty(itemName))
+        all_lists[itemName] = {};
+    all_lists[itemName][id] = new_listing;
+    const new_lists = $.extend(true, {}, all_lists);
     saveAllListings(new_lists);
 }
 function getListings()
@@ -1145,7 +1152,7 @@ function setListings()
     listings = allListings[getNameFromUrl()] || {};
     setupCacheInfo(Math.floor(
             byteCount(
-                LZString.compress(JSON.stringify(getListings()))) * 100 / 1024
+                LZString.compress(JSON.stringify(listings))) * 100 / 1024
         ) / 100
     );
 }
@@ -1153,6 +1160,7 @@ function clearAllListings()
 {
     window.localStorage.removeItem(STORAGE_LISTINGS);
     setListings();
+    saveAllListings({}, true);
 }
 function clearListings()
 {
@@ -1162,14 +1170,15 @@ function clearListings()
 }
 function saveAllListings(lists, update)
 {
+    all_listings = lists;
     if(update === true)
     {
         const tmp = $.extend(true, {}, getSettings());
         tmp.cache_size = byteCount(LZString.compress(JSON.stringify(lists)));
         saveSettings(tmp);
         setListings();
+        window.localStorage.setItem(STORAGE_LISTINGS, LZString.compress(JSON.stringify(lists)));
     }
-    all_listings = lists;
 }
 function getAllListings()
 {
@@ -1177,7 +1186,11 @@ function getAllListings()
 }
 function fetchAllListings()
 {
-    all_listings = $.parseJSON(LZString.decompress(window.localStorage.getItem(STORAGE_LISTINGS))) || {}
+    const item = window.localStorage.getItem(STORAGE_LISTINGS);
+    if(item == null || item == undefined)
+        all_listings = {};
+    else
+        all_listings = $.parseJSON(LZString.decompress(item))
 }
 function clearListingsOlderThen(minutes)
 {
@@ -1199,13 +1212,14 @@ function clearListingsOlderThen(minutes)
 }
 function getNameFromUrl(url = null)
 {
-    const regex = /steamcommunity\.com\/market\/listings\/730\/(.+)[#\/\?]+/;
+    const regex = /steamcommunity\.com\/market\/listings\/730\/(.+).*?(?=#|\?|\/)/;
+    const regex2 = /steamcommunity\.com\/market\/listings\/730\/(.+)$/;
     if(url !== undefined && url !== null && regex.exec(url).length > 0)
         return encodeURI(decodeURI(regex.exec(url)[1]));
-    const exec = regex.exec(window.location.href.replace(window.location.hash, ""));
-    if(exec == null || exec == undefined || exec[1] == null || exec[1] == undefined)
-        return {};
-    return encodeURI(decodeURI(exec[1]));
+    const e = regex.exec(window.location.href) || regex2.exec(window.location.href);
+    if(e == null || e == undefined || e[1] == null || e[1] == undefined)
+        return null;
+    return encodeURI(decodeURI(e[1]));
 }
 function onMessageListener(request, sender, callback)
 {
