@@ -2,9 +2,9 @@
  * Created by Krzysiek on 2016-11-29.
  */
 //Functions
-Array.prototype.pushAll = function(a)
+Array.prototype.pushAll = function(items)
 {
-    Array.prototype.push.apply(this, a);
+    Array.prototype.push.apply(this, items);
     return this;
 };
 Array.prototype.unique = function()
@@ -20,6 +20,14 @@ Array.prototype.unique = function()
     }
 
     return a;
+};
+Array.prototype.pushUnique = function(items)
+{
+    for(let i = 0; i < items.length; i ++)
+    {
+        if(this.indexOf(items[i]) < 0)
+            this.push(items[i]);
+    }
 };
 String.prototype.replaceAll = function(search, replacement)
 {
@@ -254,7 +262,7 @@ const SESSION_CONTAINER_TEMPLATE =
     "		<span class=\"my_market_header_active\">My scanning results</span>"+
     "		<span class=\"my_market_header_count\">(<span id=\"my_market_sessions_number\"></span>)</span>"+
     "	</h3>"+
-    "	    <div class=\"market_listing_table_message\">You don't have any results yet. Navigate to a Counter-Strike: Global Offensive item and click on a \"Scan floats\" button</div>"+
+    "	    <div class=\"market_listing_table_message\">You don't have any results yet. Navigate to a Counter-Strike: Global Offensive item and click on a \"Scan floats\" button.</div>"+
     "	</div>";
 const NO_RESULTS_HEADER =
     "<div class=\"market_listing_table_header\">"+

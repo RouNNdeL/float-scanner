@@ -1,3 +1,4 @@
+"use strict";
 this.$ = this.jQuery = jQuery.noConflict(true);
 
 //Globals
@@ -18,7 +19,7 @@ $(function()
     setSessions();
     fetchAllListings();
     setListings();
-    clearListingsOlderThen(5);
+    clearListingsOlderThen(1);
 
     chrome.runtime.onMessage.addListener(onMessageListener);
 
@@ -200,6 +201,8 @@ async function generateFloats(raw_json, sett, progress, count, lists, obj)
         }
         finally
         {
+            const full_obj = $.extend(true, {}, obj);
+            full_obj.results.pushUnique(results);
             progress.updateProgress(
                 ((progress.getProgress()+1) / count) * 100,
                 progress.getProgress()+1+"/"+count,
@@ -208,11 +211,10 @@ async function generateFloats(raw_json, sett, progress, count, lists, obj)
             progress.updateBestInfo("Best float: "+
                 formatInfo(
                     getSettings(), null,
-                    getBestFloat({results: results}),
-                    getBestQuality({results: results}))
+                    getBestFloat(full_obj),
+                    getBestQuality(full_obj))
             );
-            const full_obj = $.extend(true, {}, obj, {results: results});
-            if(results.length == 1)
+            if(full_obj.results.length == 1)
                 progress.updateAmount("Found "+filterRows(full_obj, sett, sett.filter_by).results.length
                     +" offer above "+sett.qualities[sett.filter_by].limit+"%");
             else
@@ -261,7 +263,7 @@ async function scanMultipleFloats(count, sett, progress, lists)
             sett.lang
         );
         const new_results = await generateFloats(json, sett, progress, c, lists, obj);
-        obj.results.pushAll(new_results.results);
+        obj.results.pushUnique(new_results.results);
         obj.info = new_results.info;
         obj.best = {float: getBestFloat(obj), quality: getBestQuality(obj)};
         start += max_count;
@@ -970,7 +972,7 @@ async function findListingNew(info)
             window.location.replace(new_url);
         }
         page += 1;
-        start += 100;
+        start += max_count;
     }
     /*await scanFloat();
      $.LoadingOverlay("hide");
@@ -1192,9 +1194,9 @@ function fetchAllListings()
     else
         all_listings = $.parseJSON(LZString.decompress(item))
 }
-function clearListingsOlderThen(minutes)
+function clearListingsOlderThen(days)
 {
-    const deadline = minutes * 60 * 1000;
+    const deadline = days * 24 * 60 * 60 * 1000;
     const now = Date.now();
     const allListings = getAllListings();
     for(let k in allListings)
@@ -1205,10 +1207,11 @@ function clearListingsOlderThen(minutes)
         {
             if(! allListings[k].hasOwnProperty(l))
                 continue;
-            if(allListings[k][l].date+deadline < now)
+            if(allListings[k][l].d+deadline < now)
                 delete allListings[k][l];
         }
     }
+    saveAllListings(allListings, true);
 }
 function getNameFromUrl(url = null)
 {
