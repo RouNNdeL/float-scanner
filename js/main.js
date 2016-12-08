@@ -657,7 +657,7 @@ function showResults(session, sett, filter, overtwrie = true)
                 name: name,
                 price: price
             };
-            window.location.replace(window.location.href.replace(window.location.hash, "")+"#search="+encodeURI(JSON.stringify(info)));
+            window.location.href = "#search="+encodeURI(JSON.stringify(info));
         });
         row.find(".market_listing_buy_button a").removeAttr("href");
         row.find(".market_actionmenu_button").attr("href", filtered_results.results[i].url);
@@ -909,10 +909,35 @@ async function findListingNew(info)
     const params = $.parseJSON(decodeURI(info));
     const id = params.id;
     const name = params.name;
-    const price = parseFloat(params.price.replace(/[^\d,.]/gm, "").replace(/,/, "."));
+    const price_as_string = params.price;
+    const price = parseFloat(price_as_string.replace(/[^\d,.]/gm, "").replace(/,/, "."));
     if(id == undefined || id == null || name == undefined || name == null || price == undefined || price == null)
         return 0;
-    $.LoadingOverlay("show");
+    const progress = new LoadingOverlayProgress(
+        {
+            bar: {
+                "position": "absolute",
+                "background": "#16202D",
+                "bottom": "100px",
+                "height": "30px"/*,
+                 "-webkit-transition": "all 1s linear",
+                 "-moz-transition": "all 1s linear",
+                 "-o-transition": "all 1s linear",
+                 "-ms-transition": "all 1s linear",
+                 "transition": "all 1s linear",*/
+            },
+            text: {
+                "position": "absolute",
+                "color": "#16202D",
+                "bottom": "135px",
+                "font-size": "32px"/*,
+                 "-webkit-transition": "all 1s linear",
+                 "-moz-transition": "all 1s linear",
+                 "-o-transition": "all 1s linear",
+                 "-ms-transition": "all 1s linear",
+                 "transition": "all 1s linear",*/
+            }
+        });
     con = true;
     searching = true;
     const url = decodeURI(window.location.href.replace(window.location.hash, ""));
@@ -924,7 +949,13 @@ async function findListingNew(info)
         $.LoadingOverlay("hide");
         return 0;
     }
+    $.LoadingOverlay("show", {
+        custom: progress.init()
+    });
+    progress.updateBestInfo("Searching for \""+name+"\"");
+    progress.updateAmount("Target price: "+price_as_string);
     let current_price = 0;
+    let current_price_as_string = "0";
     let start = 0;
     const max_count = 100;
     const check = await getMultipleListings(
@@ -937,6 +968,7 @@ async function findListingNew(info)
     if(check.success != true)
         return obj;
 
+    let found = false;
     let count = check.total_count;
     let page = 0;
     while(current_price < price * (1+(sett.search_threshold / 100)) && con)
@@ -956,8 +988,17 @@ async function findListingNew(info)
         {
             const s = $(this).text().replace(/[^\d,.]/gm, "").replace(/,/, ".");
             const price = parseFloat(s);
-            current_price = Math.max(current_price, price);
+            if(current_price > price)
+            {
+                current_price = price;
+                current_price_as_string = $(this).text().replace(/[\n\t]/, "");
+            }
         });
+
+        if(current_price > 0)
+            progress.updateBestInfo("Current price: "+current_price_as_string);
+
+        current_price = isNaN(price) ? 0 : price;
         const target = $("#listing_"+id, tempDom);
         const rows = $(".market_listing_row", tempDom);
         const index = rows.index(target);
@@ -969,14 +1010,25 @@ async function findListingNew(info)
                 +"&language="+sett.lang
                 +"&currency="+sett.currency
                 +"#filter="+id;
+            found = true;
+            progress.updateBestInfo("Listing found");
+            progress.updateAmount("Redirecting...");
             window.location.replace(new_url);
         }
         page += 1;
         start += max_count;
     }
-    /*await scanFloat();
-     $.LoadingOverlay("hide");
-     window.location.hash = "";*/
+    if(! found && con)
+    {
+        $.LoadingOverlay("hide");
+        window.location.replace(window.location.href.replace(window.location.hash, ""));
+        alert("Listing not found, it's probably been sold already.");
+    }
+    else if(! found)
+    {
+        $.LoadingOverlay("hide");
+        window.location.replace(window.location.href.replace(window.location.hash, ""));
+    }
 }
 function filterListing(id)
 {
