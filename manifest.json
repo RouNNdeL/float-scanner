@@ -25,6 +25,7 @@
             "run_at": "document_end",
             "js": [
                 "js/support.js",
+                "js/lz-string.js",
                 "js/jquery.min.js",
                 "js/loadingoverlay.min.js",
                 "js/dateformat.js",

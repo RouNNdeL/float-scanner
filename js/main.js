@@ -9,19 +9,21 @@ let in_progress = false;
 let con = true;
 let scanning = false;
 let searching = false;
+let all_listings;
 $(function()
 {
     limits = getExterior(window.location.href, EXTERIOR_LIMITS);
 
     loadSettings();
     setSessions();
+    fetchAllListings();
     setListings();
     clearListingsOlderThen(5);
 
     chrome.runtime.onMessage.addListener(onMessageListener);
 
     setup("#market_buyorder_info", buttons);
-    setupCacheInfo(Math.floor(byteCount(JSON.stringify(getListings())) * 100 / 1024) / 100);
+    setupCacheInfo(Math.floor(byteCount(LZString.compress(JSON.stringify(getListings()))) * 100 / 1024) / 100);
 });
 $(document).keyup(function(e)
 {
@@ -218,6 +220,7 @@ async function generateFloats(raw_json, sett, progress, count, lists, obj)
             }
         }
     }
+    saveAllListings(getAllListings(), true);
     return {results: results, info: {game: game, img: img, name: name}};
 }
 
@@ -1094,7 +1097,7 @@ function loadSettings()
 function addSession(sess, new_session, id)
 {
     sess[id] = new_session;
-    window.localStorage.setItem(STORAGE_SESSIONS, JSON.stringify(sess));
+    window.localStorage.setItem(STORAGE_SESSIONS, LZString.compress(JSON.stringify(sess)));
 }
 function getSessions()
 {
@@ -1104,23 +1107,24 @@ function removeSession(sessions, id)
 {
     const tmp = $.extend(true, {}, sessions);
     delete tmp[id];
-    window.localStorage.setItem(STORAGE_SESSIONS, JSON.stringify(tmp));
+    window.localStorage.setItem(STORAGE_SESSIONS, LZString.compress(JSON.stringify(tmp)));
 }
 function setSessions()
 {
-    sessions = $.parseJSON(window.localStorage.getItem(STORAGE_SESSIONS)) || {};
+    const item = window.localStorage.getItem(STORAGE_SESSIONS);
+    if(item == null || item == undefined)
+    {
+        sessions = {};
+    }
+    else
+    {
+        const decompressed = LZString.decompress(item);
+        sessions = $.parseJSON(decompressed);
+    }
 }
 function clearSessions()
 {
     window.localStorage.removeItem(STORAGE_SESSIONS);
-}
-function saveAllListings(lists)
-{
-    const tmp = $.extend(true, {}, getSettings());
-    tmp.cache_size = byteCount(JSON.stringify(lists));
-    saveSettings(tmp);
-    window.localStorage.setItem(STORAGE_LISTINGS, JSON.stringify(lists));
-    setListings();
 }
 function addListing(lists, id, new_listing)
 {
@@ -1141,7 +1145,7 @@ function setListings()
     listings = allListings[getNameFromUrl()] || {};
     setupCacheInfo(Math.floor(
             byteCount(
-                JSON.stringify(getListings())) * 100 / 1024
+                LZString.compress(JSON.stringify(getListings()))) * 100 / 1024
         ) / 100
     );
 }
@@ -1154,7 +1158,26 @@ function clearListings()
 {
     const allListings = getAllListings();
     delete allListings[getNameFromUrl()];
-    saveAllListings(allListings);
+    saveAllListings(allListings, true);
+}
+function saveAllListings(lists, update)
+{
+    if(update === true)
+    {
+        const tmp = $.extend(true, {}, getSettings());
+        tmp.cache_size = byteCount(LZString.compress(JSON.stringify(lists)));
+        saveSettings(tmp);
+        setListings();
+    }
+    all_listings = lists;
+}
+function getAllListings()
+{
+    return all_listings;
+}
+function fetchAllListings()
+{
+    all_listings = $.parseJSON(LZString.decompress(window.localStorage.getItem(STORAGE_LISTINGS))) || {}
 }
 function clearListingsOlderThen(minutes)
 {
@@ -1173,10 +1196,6 @@ function clearListingsOlderThen(minutes)
                 delete allListings[k][l];
         }
     }
-}
-function getAllListings()
-{
-    return ($.parseJSON(window.localStorage.getItem(STORAGE_LISTINGS)) || {});
 }
 function getNameFromUrl(url = null)
 {

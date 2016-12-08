@@ -386,6 +386,10 @@ function setOptions(set, options = {})
     else if(savingSettings.notify)
         notifyUpdate();
 }
+function getSettings()
+{
+    return settings;
+}
 function notifyUpdate(callback)
 {
     chrome.tabs.query({}, function(tabs)
