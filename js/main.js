@@ -19,7 +19,7 @@ $(function()
     setSessions();
     fetchAllListings();
     setListings();
-    clearListingsOlderThen(1);
+    clearListingsOlderThen(7);
 
     chrome.runtime.onMessage.addListener(onMessageListener);
 
@@ -859,8 +859,7 @@ function getBestFloat(obj)
     let best = 1;
     for(let i = 0; i < obj.results.length; i ++)
     {
-        if(obj.results[i].float < best && typeof obj.results[i].float == "number")
-            best = obj.results[i].float;
+        best = Math.min(obj.results[i].float, best);
     }
     return best;
 }
@@ -871,8 +870,7 @@ function getBestQuality(obj)
     let best = 0;
     for(let i = 0; i < obj.results.length; i ++)
     {
-        if(obj.results[i].quality > best)
-            best = obj.results[i].quality;
+        best = Math.max(obj.results[i].quality, best);
     }
     return best;
 }
@@ -1024,13 +1022,13 @@ async function findListingNew(info)
         {
             const s = $(this).text().replace(/[^\d,.]/gm, "").replace(/,/, ".");
             const price = parseFloat(s);
-            if(current_price > price)
+            console.log(s);
+            if(price > current_price)
             {
                 current_price = price;
                 current_price_as_string = $(this).text().replace(/[\n\t]/, "");
             }
         });
-
         if(current_price > 0)
             progress.updateBestInfo("Current price: "+current_price_as_string);
 
@@ -1053,6 +1051,7 @@ async function findListingNew(info)
         }
         page += 1;
         start += max_count;
+        console.log(page);
     }
     if(! found && con)
     {
