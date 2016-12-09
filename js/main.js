@@ -94,13 +94,14 @@ function hashActions(sess)
     if(filter_match && filter_match[1])
     {
         filterListing(filter_match[1]);
+        remove_hash = false;
     }
     if(scan_match && scan_match[1])
     {
         betterScan(parseInt(scan_match[1]));
     }
     if(remove_hash)
-        window.history.replaceState({}, document.title, window.location.pathname);
+        window.history.replaceState({}, document.title, window.location.pathname+window.location.search);
 }
 function buttons()
 {
@@ -648,7 +649,7 @@ function showResults(session, sett, filter, overtwrie = true)
         if(! filtered_results.results.hasOwnProperty(k))
             continue;
         const tier = getTier(sett, filtered_results.results[k].quality);
-        display[k] = fillTemplate(filtered_results.results[k], sett, tier, filtered_results.info);
+        display[k] = fillTemplate(filtered_results.results[k], sett, tier, filtered_results.info, k);
     }
     if(Object.keys(display).length <= 0)
     {
@@ -793,7 +794,7 @@ function showSessionsOnMain(ses, sett)
         window.location.reload();
     });
 }
-function fillTemplate(obj, sett, tier, global_info)
+function fillTemplate(obj, sett, tier, global_info, id)
 {
     let s = ROW_TEMPLATE;
     const info = formatInfo(sett, tier, obj.float, obj.quality);
@@ -814,8 +815,9 @@ function fillTemplate(obj, sett, tier, global_info)
         if(global_info.hasOwnProperty(k))
             s = s.replaceAll("%"+k+"%", global_info[k]);
     }
-    s = s.replace("%info%", info);
-    s = s.replace("%style%", styleAsString);
+    s = s.replaceAll("%id%", id);
+    s = s.replaceAll("%info%", info);
+    s = s.replaceAll("%style%", styleAsString);
     return s;
 }
 function extractParams(s)
@@ -1065,10 +1067,8 @@ async function findListingNew(info)
             progress.updateAmount("Redirecting...");
             window.location.replace(new_url);
         }
-        console.log(price);
         page += 1;
         start += max_count;
-        console.log(page);
     }
     if(! found && con)
     {
@@ -1227,7 +1227,8 @@ function addSession(sess, new_session, id)
 }
 function removeItemFromSession(sess, session_id, item_id)
 {
-    delete sess[session_id][item_id];
+
+    delete sess[session_id].results[item_id];
     window.localStorage.setItem(STORAGE_SESSIONS, LZString.compress(JSON.stringify(sess)));
 }
 function getSessions()
@@ -1338,7 +1339,7 @@ function clearListingsOlderThen(days)
 }
 function getNameFromUrl(url = null)
 {
-    const regex = /steamcommunity\.com\/market\/listings\/730\/(.+).*?(?=#|\?|\/)/;
+    const regex = /steamcommunity\.com\/market\/listings\/730\/([^/]+).*?(?=#|\/\?|\?|\/)/;
     const regex2 = /steamcommunity\.com\/market\/listings\/730\/(.+)$/;
     if(url !== undefined && url !== null && regex.exec(url).length > 0)
         return encodeURI(decodeURI(regex.exec(url)[1]));
