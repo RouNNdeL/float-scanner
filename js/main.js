@@ -59,7 +59,7 @@ async function onOptionsLoaded(max_tries = 100)
         await sleep(100);
     }
     hashActions(ses);
-    if(window.location.href.match(/steamcommunity.com\/market\/?$/))
+    if(window.location.href.match(/steamcommunity.com\/market\/?(?:#.*|$)/))
         showSessionsOnMain(ses, getSettings());
 }
 function handlePopStateEvent(e)
@@ -77,11 +77,12 @@ function hashActions(sess)
     let remove_hash = true;
     if(session_match && session_match[1])
     {
-        remove_hash = false;
-
         const sid = parseInt(session_match[1]);
-        if(sess[sid])
+        if(sess[sid] !== null && sess[sid] !== undefined)
+        {
             showResults(sess[sid], getSettings());
+            remove_hash = false;
+        }
         else
             alert("Invalid session ID");
     }
@@ -137,7 +138,7 @@ function generateButton(txt, onclick = null)
 
 async function generateFloats(raw_json, sett, progress, count, lists, obj)
 {
-    const results = [];
+    const results = {};
     let bestFloat = 1;
     let bestQuality = 0;
     let game = raw_json.app_data[730].name;
@@ -199,10 +200,9 @@ async function generateFloats(raw_json, sett, progress, count, lists, obj)
             obj.float = f;
             obj.quality = quality;
             obj.url = asset.actions[0].url;
-            obj.id = k;
             img = fillImgTemplate(asset);
             name = asset.market_name;
-            results.push(obj);
+            results[k] = obj;
         }
         catch(error)
         {
@@ -213,12 +213,11 @@ async function generateFloats(raw_json, sett, progress, count, lists, obj)
             obj.url = asset.actions[0].url;
             img = fillImgTemplate(asset);
             name = asset.market_name;
-            results.push(obj);
+            results[k] = obj;
         }
         finally
         {
-            const full_obj = $.extend(true, {}, obj);
-            full_obj.results.pushUnique(results);
+            const full_obj = $.extend(true, {}, obj, {results: results});
             progress.updateProgress(
                 ((progress.getProgress()+1) / count) * 100,
                 progress.getProgress()+1+"/"+count,
@@ -231,11 +230,11 @@ async function generateFloats(raw_json, sett, progress, count, lists, obj)
                     getBestQuality(full_obj))
             );
             if(full_obj.results.length == 1)
-                progress.updateAmount("Found "+filterRows(full_obj, sett, sett.filter_by).results.length
+                progress.updateAmount("Found "+Object.keys(filterRows(full_obj, sett, sett.filter_by).results).length
                     +" offer above "+sett.qualities[sett.filter_by].limit+"%");
             else
             {
-                progress.updateAmount("Found "+filterRows(full_obj, sett, sett.filter_by).results.length
+                progress.updateAmount("Found "+Object.keys(filterRows(full_obj, sett, sett.filter_by).results).length
                     +" offers above "+sett.qualities[sett.filter_by].limit+"%");
             }
         }
@@ -256,7 +255,7 @@ async function scanMultipleFloats(count, sett, progress, lists)
     const max_count = 100;
     let start = 0;
     const obj = {};
-    obj.results = [];
+    obj.results = {};
     const check = await getMultipleListings(
         window.location.href.replace(window.location.hash, ""),
         0,
@@ -268,7 +267,6 @@ async function scanMultipleFloats(count, sett, progress, lists)
         return obj;
 
     count = Math.min(count, check.total_count);
-    const c = count;
     while(count > 0 && con)
     {
         const json = await getMultipleListings(
@@ -278,9 +276,8 @@ async function scanMultipleFloats(count, sett, progress, lists)
             sett.currency,
             sett.lang
         );
-        const new_results = await generateFloats(json, sett, progress, c, lists, obj);
-        obj.results.pushUnique(new_results.results);
-        obj.info = new_results.info;
+        const new_results = await generateFloats(json, sett, progress, count, lists, obj);
+        $.extend(true, obj, new_results);
         obj.best = {float: getBestFloat(obj), quality: getBestQuality(obj)};
         start += max_count;
         count -= max_count;
@@ -352,6 +349,8 @@ function fillImgTemplate(data)
     let s = IMG_TEMPLATE;
     for(let k in data)
     {
+        if(! data.hasOwnProperty(k))
+            continue;
         if(k == "icon_url")
             s = s.replaceAll("%"+k+"%", ICON_URL+data[k]);
         else
@@ -387,13 +386,14 @@ async function scanFloat()
 
     const links = scanPage();
     const rows = $(".market_listing_row").not("#market_buyorder_info");
-    const result = [];
+    const results = {};
     let bestFloat = 1;
     let bestQuality = 0;
     let game = "";
     let name = "";
     let img = "";
 
+    //noinspection JSUnusedAssignment
     in_progress = true;
 
     for(let i = 0; i < rows.length; i ++)
@@ -434,7 +434,7 @@ async function scanFloat()
             delete obj.img;
             delete obj.name;
             delete obj.game;
-            result.push(obj);
+            results[obj.id] = obj;
         }
         catch(error)
         {
@@ -442,7 +442,7 @@ async function scanFloat()
         }
     }
     in_progress = false;
-    return {results: result, game: game, img: img, name: name};
+    return {results: results, game: game, img: img, name: name};
 }
 function setupCacheInfo(size)
 {
@@ -493,7 +493,7 @@ function scanPage()
     return result;
 }
 /**
- * @deprecated Use betterScan() from now on
+ * @deprecated Use betterScan() from now on. It will not work with new sessions
  * @returns {number} Status
  */
 async function scan()
@@ -535,13 +535,13 @@ async function scan()
         return 0;
     }
     const offers = {};
-    offers.results = [];
+    offers.results = {};
     let best = "Loading floats...";
     progress.updateBestInfo(best);
     for(let i = 0; i < pages; i ++)
     {
         const off = await scanFloat();
-        offers.results = offers.results.pushAll(off.results);
+        $.extend(true, offers.results, off.results);
         offers.results = removeDuplicates(offers.results);
         offers.info = {game: off.game, name: off.name, img: off.img};
         best = "Best float: "+formatInfo(getSettings(), null, getBestFloat(offers), getBestQuality(offers));
@@ -643,17 +643,19 @@ function showResults(session, sett, filter, overtwrie = true)
     const select = setupSelect(sett, filter);
     for_removal.remove();
     const filtered_results = filterRows(session, sett, filter);
-    for(let i = 0; i < filtered_results.results.length; i ++)
+    for(let k in filtered_results.results)
     {
-        const tier = getTier(sett, filtered_results.results[i].quality);
-        display[i] = fillTemplate(filtered_results.results[i], sett, tier, filtered_results.info);
+        if(! filtered_results.results.hasOwnProperty(k))
+            continue;
+        const tier = getTier(sett, filtered_results.results[k].quality);
+        display[k] = fillTemplate(filtered_results.results[k], sett, tier, filtered_results.info);
     }
-    if(display.length <= 0)
+    if(Object.keys(display).length <= 0)
     {
         $(".market_listing_table_header").remove();
         con.prepend($.parseHTML(NO_RESULTS_HEADER));
     }
-    else if(display.length == 1)
+    else if(Object.keys(display).length == 1)
     {
         $(".market_listing_table_header").remove();
     }
@@ -662,9 +664,11 @@ function showResults(session, sett, filter, overtwrie = true)
         $(".market_listing_table_header").remove();
         con.prepend($.parseHTML(DEFAULT_HEADER_WITH_FLOAT));
     }
-    for(let i = 0; i < display.length; i ++)
+    for(let k in display)
     {
-        const row = $(display[i]);
+        if(! display.hasOwnProperty(k))
+            continue;
+        const row = $(display[k]);
         if(! row.find(".market_listing_price_with_fee").text().match(/\d/))
         {
             continue;
@@ -676,18 +680,21 @@ function showResults(session, sett, filter, overtwrie = true)
             const row = $("#listing_"+id);
             if(row.length != 1)
                 return 0;
+            const session_match = window.location.hash.match(/session_id=(\d+)/);
+            const session_before = session_match == null ? null : parseInt(session_match[1]);
             const price = row.find(".market_listing_price_with_fee").text().replace(/[\s\t\n]/gm, "");
             const name = row.find(".market_listing_item_name").text().replace(/[\n]/gm, "");
             const info = {
                 id: id,
                 name: name,
-                price: price
+                price: price,
+                session_before: session_before
             };
             window.location.href = "#search="+encodeURI(JSON.stringify(info));
         });
         row.find(".market_listing_buy_button a").removeAttr("href");
-        row.find(".market_actionmenu_button").attr("href", filtered_results.results[i].url);
-        if(filtered_results.results[i].float == filtered_results.best.float)
+        row.find(".market_actionmenu_button").attr("href", filtered_results.results[k].url);
+        if(filtered_results.results[k].float == filtered_results.best.float)
         {
             //row.css("background-color", "rgba(38, 63, 149, 0.72)");
             con.prepend(row);
@@ -744,18 +751,21 @@ function showSessionsOnMain(ses, sett)
         sessions_container.append(header);
         for(let k in ses)
         {
+            if(! ses.hasOwnProperty(k))
+                continue;
             let s = SESSION_ROW_TEMPLATE;
             if(ses[k].best == null || ses[k].best == undefined || ses[k].info == null || ses[k].info == undefined || ses[k].results == null || ses[k].results == undefined)
                 continue;
-            const tier = getTier(sett, ses[k].best.quality);
+            //const tier = getTier(sett, ses[k].best.quality);
             const info = formatInfo(sett, null, ses[k].best.float, ses[k].best.quality);
             for(let i in ses[k].info)
             {
-                s = s.replaceAll("%"+i+"%", ses[k].info[i]);
+                if(ses[k].info.hasOwnProperty(i))
+                    s = s.replaceAll("%"+i+"%", ses[k].info[i]);
             }
             s = s.replaceAll("%info%", info);
             s = s.replaceAll("%sid%", k);
-            s = s.replaceAll("%quantity%", ses[k].results.length);
+            s = s.replaceAll("%quantity%", Object.keys(ses[k].results).length);
             s = s.replaceAll("%date%", new Date(parseInt(k)).format(sett.date_format));
             const parsed = $($.parseHTML(s)[0]);
             parsed.find(".market_session_delete_button").click(function()
@@ -791,15 +801,18 @@ function fillTemplate(obj, sett, tier, global_info)
     let styleAsString = "";
     for(let k in style)
     {
-        styleAsString += k+": "+style[k]+";";
+        if(style.hasOwnProperty(k))
+            styleAsString += k+": "+style[k]+";";
     }
     for(let k in obj)
     {
-        s = s.replaceAll("%"+k+"%", obj[k]);
+        if(obj.hasOwnProperty(k))
+            s = s.replaceAll("%"+k+"%", obj[k]);
     }
     for(let k in global_info)
     {
-        s = s.replaceAll("%"+k+"%", global_info[k]);
+        if(global_info.hasOwnProperty(k))
+            s = s.replaceAll("%"+k+"%", global_info[k]);
     }
     s = s.replace("%info%", info);
     s = s.replace("%style%", styleAsString);
@@ -825,11 +838,11 @@ function filterRows(obj, settings, filter)
 {
     const min_quality = filter == null || filter == undefined ? - 1 : settings.qualities[filter].limit;
     const new_rows = {};
-    new_rows.results = [];
-    for(let i = 0; i < obj.results.length; i ++)
+    new_rows.results = {};
+    for(let k in obj.results)
     {
-        if(obj.results[i].quality >= min_quality)
-            new_rows.results.push(obj.results[i]);
+        if(obj.results.hasOwnProperty(k) && obj.results[k].quality >= min_quality)
+            new_rows.results[k] = obj.results[k];
     }
     new_rows.results = removeDuplicates(new_rows.results);
     new_rows.best = {};
@@ -840,14 +853,14 @@ function filterRows(obj, settings, filter)
 }
 function removeDuplicates(rows)
 {
-    const new_rows = [];
+    const new_rows = {};
     const ids = [];
-    for(let i = 0; i < rows.length; i ++)
+    for(let k in rows)
     {
-        if(ids.indexOf(rows[i].id) < 0)
+        if(rows.hasOwnProperty(k) && ids.indexOf(k) < 0)
         {
-            new_rows.push(rows[i]);
-            ids.push(rows[i].id);
+            new_rows[k] = rows[k];
+            ids.push(k);
         }
     }
     return new_rows;
@@ -857,9 +870,10 @@ function getBestFloat(obj)
     if(! obj.results)
         return - 1;
     let best = 1;
-    for(let i = 0; i < obj.results.length; i ++)
+    for(let k in obj.results)
     {
-        best = Math.min(obj.results[i].float, best);
+        if(obj.results.hasOwnProperty(k))
+            best = Math.min(obj.results[k].float, best);
     }
     return best;
 }
@@ -868,9 +882,10 @@ function getBestQuality(obj)
     if(! obj.results)
         return - 1;
     let best = 0;
-    for(let i = 0; i < obj.results.length; i ++)
+    for(let k in obj.results)
     {
-        best = Math.max(obj.results[i].quality, best);
+        if(obj.results.hasOwnProperty(k))
+            best = Math.max(obj.results[k].quality, best);
     }
     return best;
 }
@@ -941,12 +956,14 @@ async function findListingNew(info)
 {
     const sett = getSettings();
     const params = $.parseJSON(decodeURI(info));
+    const session_before = params.session_before;
     const id = params.id;
     const name = params.name;
     const price_as_string = params.price;
     const price = parseFloat(price_as_string.replace(/[^\d,.]/gm, "").replace(/,/, "."));
     if(id == undefined || id == null || name == undefined || name == null || price == undefined || price == null)
         return 0;
+
     const progress = new LoadingOverlayProgress(
         {
             bar: {
@@ -1021,18 +1038,17 @@ async function findListingNew(info)
         price_container.each(function(i)
         {
             const s = $(this).text().replace(/[^\d,.]/gm, "").replace(/,/, ".");
-            const price = parseFloat(s);
-            console.log(s);
-            if(price > current_price)
+            const p = parseFloat(s);
+            if(p > current_price)
             {
-                current_price = price;
+                current_price = p;
                 current_price_as_string = $(this).text().replace(/[\n\t]/, "");
             }
         });
         if(current_price > 0)
             progress.updateBestInfo("Current price: "+current_price_as_string);
 
-        current_price = isNaN(price) ? 0 : price;
+        current_price = isNaN(current_price) ? 0 : current_price;
         const target = $("#listing_"+id, tempDom);
         const rows = $(".market_listing_row", tempDom);
         const index = rows.index(target);
@@ -1049,21 +1065,32 @@ async function findListingNew(info)
             progress.updateAmount("Redirecting...");
             window.location.replace(new_url);
         }
+        console.log(price);
         page += 1;
         start += max_count;
         console.log(page);
     }
     if(! found && con)
     {
+        scanning = false;
         $.LoadingOverlay("hide");
-        window.location.replace(window.location.href.replace(window.location.hash, ""));
-        alert("Listing not found, it's probably been sold already.");
+        const remove = confirm("Listing not found, it's probably been sold already.\nDo you want to remove this item from the session?");
+        if(remove)
+        {
+            removeItemFromSession(getSessions(), session_before, id);
+        }
+        if(session_before !== null)
+            window.location.replace("#session_id="+session_before);
     }
     else if(! found)
     {
+        scanning = false;
         $.LoadingOverlay("hide");
-        window.location.replace(window.location.href.replace(window.location.hash, ""));
+        if(session_before !== null)
+            window.location.replace("#session_id="+session_before);
     }
+
+    con = false;
     return 1;
 }
 function filterListing(id)
@@ -1091,7 +1118,7 @@ function getExterior(url, a)
 {
     for(let e in a)
     {
-        if(url.match(e))
+        if(a.hasOwnProperty(e) && url.match(e))
             return a[e];
     }
     return [0, 1];
@@ -1140,7 +1167,7 @@ function injectHovers(hovers)
 function injectActionButtonSetup()
 {
     const script = $("<script>");
-    script.text("InstallMarketActionMenuButtons();zc ");
+    script.text("InstallMarketActionMenuButtons();");
     $("body").prepend(script);
 }
 function setup(selector, callback, n = 0)
@@ -1155,6 +1182,7 @@ function setup(selector, callback, n = 0)
 }
 function sendNotification(title, message, callback)
 {
+    //noinspection JSUnresolvedVariable
     chrome.runtime.sendMessage(
         {
             type: TYPE_NOTIFY,
@@ -1184,15 +1212,22 @@ function saveSettings(settings)
 {
     const obj = {};
     obj[STORAGE_SETTINGS] = settings;
+    //noinspection JSUnresolvedVariable
     chrome.storage.sync.set(obj);
 }
 function loadSettings()
 {
+    //noinspection JSUnresolvedVariable
     chrome.storage.sync.get(STORAGE_SETTINGS, setOptions);
 }
 function addSession(sess, new_session, id)
 {
     sess[id] = new_session;
+    window.localStorage.setItem(STORAGE_SESSIONS, LZString.compress(JSON.stringify(sess)));
+}
+function removeItemFromSession(sess, session_id, item_id)
+{
+    delete sess[session_id][item_id];
     window.localStorage.setItem(STORAGE_SESSIONS, LZString.compress(JSON.stringify(sess)));
 }
 function getSessions()
