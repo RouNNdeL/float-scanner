@@ -283,7 +283,7 @@ function loadHTML(sett, scroll = null)
     setupCurrencySelect(CURRENCIES, currency);
     currency.val(sett.currency);
     currency.material_select();
-    clear.text("Clear listing cache ("+Math.floor((sett.cache_size / 1024) * 100) / 100+"kb)")
+    clear.text("Clear listing cache ("+Math.floor((sett.cache_size / 1024) * 100) / 100+"kb)");
 
     title.on("dblclick", editName).addClass("bound");
     limit.change(saveNumber).addClass("bound");
