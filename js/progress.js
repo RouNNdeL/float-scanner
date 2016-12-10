@@ -5,6 +5,7 @@ const LoadingOverlayProgress = function(options)
     let _info;
     let _amount;
     let _progress;
+    let _more;
     let _settings = $.extend(true, {}, {
         bar: {
             "bottom": "25px",
@@ -23,6 +24,7 @@ const LoadingOverlayProgress = function(options)
         updateProgress: updateProgress,
         updateBestInfo: updateBestInfo,
         updateAmount: updateAmount,
+        updateMore: updateMore,
         getProgress: getProgress
     };
 
@@ -44,6 +46,17 @@ const LoadingOverlayProgress = function(options)
                     "width": "100%"
                 }
             }).appendTo(wrapper);
+        _more = $("<p>",
+            {
+                class: "loading_overlay_progress_more",
+                css: {
+                    "width": "100%",
+                    "text-align": "center",
+                    "font-size": "24px",
+                    "color": "#16202D"
+                },
+                text: ""
+            }).appendTo(p_wrap);
         _info = $("<p>",
             {
                 class: "loading_overlay_progress_price",
@@ -52,8 +65,7 @@ const LoadingOverlayProgress = function(options)
                     "text-align": "center",
                     "font-size": "24px",
                     "color": "#16202D"
-                }
-                ,
+                },
                 text: "Scanning floats..."
             }).appendTo(p_wrap);
         _amount = $("<p>",
@@ -64,8 +76,7 @@ const LoadingOverlayProgress = function(options)
                     "text-align": "center",
                     "font-size": "24px",
                     "color": "#16202D"
-                }
-                ,
+                },
                 text: ""
             }).appendTo(p_wrap);
         _bar = $("<div>", {
@@ -109,6 +120,10 @@ const LoadingOverlayProgress = function(options)
         _amount.text(value);
     }
 
+    function updateMore(value)
+    {
+        _more.text(value);
+    }
     function getProgress()
     {
         return _progress;

@@ -272,7 +272,7 @@ async function scanMultipleFloats(count, sett, progress, lists)
     const obj = {};
     obj.results = {};
     const check = await getMultipleListings(
-        window.location.href.replace(window.location.hash, ""),
+        window.location.origin+window.location.pathname,
         0,
         10,
         sett.currency,
@@ -286,12 +286,18 @@ async function scanMultipleFloats(count, sett, progress, lists)
     while(count > 0 && con)
     {
         const json = await getMultipleListings(
-            window.location.href.replace(window.location.hash, ""),
+            window.location.origin+window.location.pathname,
             start,
             Math.min(count, max_count),
             sett.currency,
             sett.lang
         );
+        if(json.success != true)
+        {
+            progress.updateMore("Steam timed-out, retrying...");
+            await sleep(sett.request_delay);
+            continue;
+        }
         const new_results = await generateFloats(json, sett, progress, const_count, lists, obj);
         $.extend(true, obj, new_results);
         obj.best = {float: getBestFloat(obj), quality: getBestQuality(obj)};
@@ -346,18 +352,30 @@ async function betterScan(count)
     progress.updateProgress(0, "0/"+count, 0);
 
     const sett = getSettings();
-    const new_ses = await scanMultipleFloats(count, /*$.extend(true, {}, getSettings(), {currency: 2})*/sett, progress, getListings());
-    new_ses.info.c = sett.currency;
-    progress.updateBestInfo("Setting up the view...");
-    progress.updateAmount("Please be patient");
+    try
+    {
+        const new_ses = await scanMultipleFloats(count, /*$.extend(true, {}, getSettings(), {currency: 2})*/sett, progress, getListings());
+        new_ses.info.c = sett.currency;
+        progress.updateBestInfo("Setting up the view...");
+        progress.updateAmount("Please be patient");
 
-    const sid = Math.abs(Date.now());
-    addSession(getSessions(), filterRows(new_ses, sett, sett.session_threshold), sid);
-    await sleep(1000);
+        const sid = Math.abs(Date.now());
+        addSession(getSessions(), filterRows(new_ses, sett, sett.session_threshold), sid);
+        await sleep(1000);
 
-    window.location.hash = "#session_id="+sid;
-    scanning = false;
-    $.LoadingOverlay("hide");
+        window.location.hash = "#session_id="+sid;
+    }
+    catch(e)
+    {
+        console.log(e);
+        progress.updateMore("Steam timed-out, try again");
+        await sleep(2500);
+    }
+    finally
+    {
+        scanning = false;
+        $.LoadingOverlay("hide");
+    }
 }
 
 function fillImgTemplate(data)
@@ -1029,7 +1047,7 @@ async function findListingNew(info)
     let start = 0;
     const max_count = 100;
     const check = await getMultipleListings(
-        window.location.href.replace(window.location.hash, ""),
+        window.location.origin+window.location.pathname,
         0,
         10,
         sett.currency,
@@ -1046,7 +1064,7 @@ async function findListingNew(info)
     {
         await sleep(sett.request_delay);
         const json = await getMultipleListings(
-            window.location.href.replace(window.location.hash, ""),
+            window.location.origin+window.location.pathname,
             start,
             Math.min(count, max_count),
             currency,
@@ -1285,7 +1303,7 @@ async function filterSession(sess, session_id, sett)
     let start = 0;
     const max_count = 100;
     const check = await getMultipleListings(
-        window.location.href.replace(window.location.hash, ""),
+        window.location.origin+window.location.pathname,
         0,
         10,
         sett.currency,
