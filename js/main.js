@@ -19,7 +19,7 @@ $(function()
     setSessions();
     fetchAllListings();
     setListings();
-    clearListingsOlderThen(7);
+    //clearListingsOlderThen(7);
 
     chrome.runtime.onMessage.addListener(onMessageListener);
 
