@@ -1338,23 +1338,26 @@ async function filterSession(sess, session_id, sett)
         current_price = isNaN(current_price) ? 0 : current_price;
         start += max_count;
     }
+    if(con)
+    {
+        let amount = 0;
+        for(let k in items)
+        {
+            if(! items.hasOwnProperty(k))
+                continue;
+            if(ids.indexOf(parseInt(k)) < 0)
+            {
+                removeItemFromSession(sess, session_id, k);
+                amount ++;
+            }
+        }
+        progress.updateBestInfo("Finished");
+        progress.updateAmount("Removed "+amount+" sold listings");
+        await sleep(2500);
+        $.LoadingOverlay("hide");
+    }
     con = false;
     searching = false;
-    let amount = 0;
-    for(let k in items)
-    {
-        if(! items.hasOwnProperty(k))
-            continue;
-        if(ids.indexOf(parseInt(k)) < 0)
-        {
-            removeItemFromSession(sess, session_id, k);
-            amount ++;
-        }
-    }
-    progress.updateBestInfo("Finished");
-    progress.updateAmount("Removed "+amount+" sold listings");
-    await sleep(2500);
-    $.LoadingOverlay("hide");
 }
 function removeItemFromSession(sess, session_id, item_id)
 {
