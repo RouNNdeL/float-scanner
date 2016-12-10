@@ -41,6 +41,54 @@ String.prototype.escapeJSON = function()
 {
     return this.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|\'\"]/g, "\\$&");
 };
+function getMaximumPrice(results)
+{
+    const progress = new LoadingOverlayProgress(
+        {
+            bar: {
+                "position": "absolute",
+                "background": "#16202D",
+                "bottom": "100px",
+                "height": "30px"/*,
+                 "-webkit-transition": "all 0.5s linear",
+                 "-moz-transition": "all 0.5s linear",
+                 "-o-transition": "all 0.5s linear",
+                 "-ms-transition": "all 0.5s linear",
+                 "transition": "all 0.5s linear",*/
+            },
+            text: {
+                "position": "absolute",
+                "color": "#16202D",
+                "bottom": "135px",
+                "font-size": "32px"/*,
+                 "-webkit-transition": "all 0.5s linear",
+                 "-moz-transition": "all 0.5s linear",
+                 "-o-transition": "all 0.5s linear",
+                 "-ms-transition": "all 0.5s linear",
+                 "transition": "all 0.5s linear",*/
+            }
+        });
+    con = true;
+    searching = true;
+    $.LoadingOverlay("show", {
+        custom: progress.init()
+    });
+    let max = 0;
+    let max_s = "";
+    for(let k in results)
+    {
+        if(! results.hasOwnProperty(k))
+            continue;
+        const s = results[k].price_with_fee.replace(/[^\d,.]/gm, "").replace(/,/, ".");
+        if(parseFloat(s) > max)
+        {
+            max = parseFloat(s);
+            max_s = results[k].price_with_fee;
+        }
+    }
+    console.log(max, max_s);
+    return {i: max, s: max_s};
+}
 function sleep(ms)
 {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -231,6 +279,9 @@ const EXTERIOR_LIMITS = {
 const STORAGE_SETTINGS = "settings";
 const STORAGE_LISTINGS = "listings";
 const STORAGE_SESSIONS = "sessions";
+const ID_ONE_PAGE_SCAN = "one_page_scan";
+const ID_BATCH_SCAN = "batch_scan";
+const ID_CLEAR_CACHE = "clear_cache";
 const TYPE_NOTIFY = "TYPE_NOTIFY";
 const TYPE_UPDATE_SETTINGS = "TYPE_UPDATE_SETTINGS";
 const TYPE_CLEAR_CACHE = "TYPE_CLEAR_CACHE";

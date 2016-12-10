@@ -80,6 +80,7 @@ function hashActions(sess)
         const sid = parseInt(session_match[1]);
         if(sess[sid] !== null && sess[sid] !== undefined)
         {
+            $("#"+ID_ONE_PAGE_SCAN).remove();
             showResults(sess[sid], getSettings());
             remove_hash = false;
         }
@@ -109,7 +110,7 @@ function buttons()
     const before = $("#market_commodity_buyrequests");
 
     //Float scan button
-    const scan_btn = generateButton("Show floats", scanFloat);
+    const scan_btn = generateButton(ID_ONE_PAGE_SCAN, "Show floats", scanFloat);
     scan_btn.insertBefore(before);
 
     //Batch scan button
@@ -117,19 +118,31 @@ function buttons()
      batch_scan_btn.insertBefore(before);*/
 
     //Better scan buttons
-    const better_scan_btn = generateButton("Scan floats", initializeScan);
+    const better_scan_btn = generateButton(ID_BATCH_SCAN, "Scan floats", initializeScan);
     better_scan_btn.insertBefore(before);
+
+    const test = generateButton("test", "remove");
+    test.click(function()
+    {
+        filterSession(getSessions(), 1481306920555, getSettings());
+    });
+    test.insertBefore(before);
 }
-function generateButton(txt, onclick = null)
+function generateButton(id, txt, onclick = null)
 {
-    const start = $("<div>");
-    const btn = $("<a>");
-    const text = $("<span>");
-    start.css("float", "right");
-    start.css("padding-right", "10px");
-    btn.addClass("btn_medium");
-    btn.addClass("btn_green_white_innerfade");
-    text.text(txt);
+    const start = $("<div>", {
+        css: {
+            "float": "right",
+            "padding-right": "10px"
+        }
+    });
+    const btn = $("<a>", {
+        class: "btn_medium btn_green_white_innerfade",
+        id: id
+    });
+    const text = $("<span>", {
+        text: txt
+    });
     btn.append(text);
     start.append(btn);
     if(onclick !== null)
@@ -268,6 +281,7 @@ async function scanMultipleFloats(count, sett, progress, lists)
         return obj;
 
     count = Math.min(count, check.total_count);
+    const const_count = count;
     while(count > 0 && con)
     {
         const json = await getMultipleListings(
@@ -277,7 +291,7 @@ async function scanMultipleFloats(count, sett, progress, lists)
             sett.currency,
             sett.lang
         );
-        const new_results = await generateFloats(json, sett, progress, count, lists, obj);
+        const new_results = await generateFloats(json, sett, progress, const_count, lists, obj);
         $.extend(true, obj, new_results);
         obj.best = {float: getBestFloat(obj), quality: getBestQuality(obj)};
         start += max_count;
@@ -332,7 +346,7 @@ async function betterScan(count)
 
     const sett = getSettings();
     const new_ses = await scanMultipleFloats(count, /*$.extend(true, {}, getSettings(), {currency: 2})*/sett, progress, getListings());
-
+    new_ses.info.c = sett.currency;
     progress.updateBestInfo("Setting up the view...");
     progress.updateAmount("Please be patient");
 
@@ -457,7 +471,7 @@ function setupCacheInfo(size)
     const content_container = $("<div>", {
         class: "market_listing_filter_contents"
     });
-    const btn = generateButton("Clear cache", clearListings);
+    const btn = generateButton(ID_CLEAR_CACHE, "Clear cache", clearListings);
     const content = $.parseHTML("<h2 class=\"market_section_title\">Cache</h2>Cache size: "+size+"kb");
     content_container.append(btn);
     content_container.append(content);
@@ -689,7 +703,8 @@ function showResults(session, sett, filter, overtwrie = true)
                 id: id,
                 name: name,
                 price: price,
-                session_before: session_before
+                session_before: session_before,
+                currency: session.info.c
             };
             window.location.href = "#search="+encodeURI(JSON.stringify(info));
         });
@@ -961,6 +976,7 @@ async function findListingNew(info)
     const session_before = params.session_before;
     const id = params.id;
     const name = params.name;
+    const currency = params.currency;
     const price_as_string = params.price;
     const price = parseFloat(price_as_string.replace(/[^\d,.]/gm, "").replace(/,/, "."));
     if(id == undefined || id == null || name == undefined || name == null || price == undefined || price == null)
@@ -1002,9 +1018,6 @@ async function findListingNew(info)
         $.LoadingOverlay("hide");
         return 0;
     }
-    $.LoadingOverlay("show", {
-        custom: progress.init()
-    });
     progress.updateBestInfo("Searching for \""+name+"\"");
     progress.updateAmount("Target price: "+price_as_string);
     let current_price = 0;
@@ -1021,6 +1034,10 @@ async function findListingNew(info)
     if(check.success != true)
         return 0;
 
+    $.LoadingOverlay("show", {
+        custom: progress.init()
+    });
+
     let found = false;
     let count = check.total_count;
     let page = 0;
@@ -1031,7 +1048,7 @@ async function findListingNew(info)
             window.location.href.replace(window.location.hash, ""),
             start,
             Math.min(count, max_count),
-            sett.currency,
+            currency,
             sett.lang
         );
         const parsed = $.parseHTML(json.results_html);
@@ -1225,6 +1242,114 @@ function addSession(sess, new_session, id)
     sess[id] = new_session;
     window.localStorage.setItem(STORAGE_SESSIONS, LZString.compress(JSON.stringify(sess)));
 }
+async function filterSession(sess, session_id, sett)
+{
+    const progress = new LoadingOverlayProgress(
+        {
+            bar: {
+                "position": "absolute",
+                "background": "#16202D",
+                "bottom": "100px",
+                "height": "30px"/*,
+                 "-webkit-transition": "all 0.5s linear",
+                 "-moz-transition": "all 0.5s linear",
+                 "-o-transition": "all 0.5s linear",
+                 "-ms-transition": "all 0.5s linear",
+                 "transition": "all 0.5s linear",*/
+            },
+            text: {
+                "position": "absolute",
+                "color": "#16202D",
+                "bottom": "135px",
+                "font-size": "32px"/*,
+                 "-webkit-transition": "all 0.5s linear",
+                 "-moz-transition": "all 0.5s linear",
+                 "-o-transition": "all 0.5s linear",
+                 "-ms-transition": "all 0.5s linear",
+                 "transition": "all 0.5s linear",*/
+            }
+        });
+    con = true;
+    searching = true;
+    const session = sess[session_id];
+    const items = session.results;
+    const max = getMaximumPrice(items);
+    const max_price = max.i;
+    const max_price_s = max.s;
+    const ids = [];
+    const currency = session.info.c || sett.currency;
+    const price = 0;
+    let current_price = 0;
+    let current_price_as_string = "0";
+    let start = 0;
+    const max_count = 100;
+    const check = await getMultipleListings(
+        window.location.href.replace(window.location.hash, ""),
+        0,
+        10,
+        sett.currency,
+        sett.lang
+    );
+    if(check.success != true)
+        return 0;
+    let count = check.total_count;
+    $.LoadingOverlay("show", {
+        custom: progress.init()
+    });
+    progress.updateBestInfo("Removing sold listings for this session");
+    progress.updateAmount("Maximum price: "+max_price_s);
+    while(current_price < max_price * (1+(sett.search_threshold / 100)) && con)
+    {
+        await sleep(sett.request_delay);
+        const json = await getMultipleListings(
+            "http://steamcommunity.com/market/listings/730/"+encodeURI(session.info.name),
+            start,
+            Math.min(count, max_count),
+            currency,
+            sett.lang
+        );
+        const parsed = $.parseHTML(json.results_html);
+        const tempDom = $('<div>').append(parsed);
+        const price_container = $(".market_listing_price_with_fee", tempDom);
+        const listings = $(".market_listing_row", tempDom);
+        listings.each(function(i)
+        {
+            const match = $(this).attr("id").match(/listing_(\d+)/);
+            if(match != null && match[1] != null)
+            {
+                const id = parseInt(match[1]);
+                ids.push(id);
+            }
+        });
+        console.log(ids);
+        price_container.each(function(i)
+        {
+            const s = $(this).text().replace(/[^\d,.]/gm, "").replace(/,/, ".");
+            const p = parseFloat(s);
+            if(p > current_price)
+            {
+                current_price = p;
+                current_price_as_string = $(this).text().replace(/[\n\t]/, "");
+            }
+        });
+        console.log(current_price_as_string);
+        if(current_price > 0)
+            progress.updateBestInfo("Current price: "+current_price_as_string);
+
+        current_price = isNaN(current_price) ? 0 : current_price;
+        start += max_count;
+    }
+    $.LoadingOverlay("hide");
+    con = false;
+    searching = false;
+    for(let k in items)
+    {
+        if(! items.hasOwnProperty(k))
+            continue;
+        if(ids.indexOf(parseInt(k)) < 0)
+            removeItemFromSession(sess, session_id, k);
+    }
+}
 function removeItemFromSession(sess, session_id, item_id)
 {
 
@@ -1339,7 +1464,7 @@ function clearListingsOlderThen(days)
 }
 function getNameFromUrl(url = null)
 {
-    const regex = /steamcommunity\.com\/market\/listings\/730\/([^/]+).*?(?=#|\/\?|\?|\/)/;
+    const regex = /steamcommunity\.com\/market\/listings\/730\/([^\/\?]+)(?=#|\/\?|\?|\/)/;
     const regex2 = /steamcommunity\.com\/market\/listings\/730\/(.+)$/;
     if(url !== undefined && url !== null && regex.exec(url).length > 0)
         return encodeURI(decodeURI(regex.exec(url)[1]));
