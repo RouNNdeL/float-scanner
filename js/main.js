@@ -233,24 +233,24 @@ async function generateFloats(raw_json, sett, progress, count, lists, obj)
         finally
         {
             const full_obj = $.extend(true, {}, obj, {results: results});
-            progress.updateMore("");
+            progress.updateText3("");
             progress.updateProgress(
                 ((progress.getProgress()+1) / count) * 100,
                 progress.getProgress()+1+"/"+count,
                 progress.getProgress()+1
             );
-            progress.updateBestInfo("Best float: "+
+            progress.updateText1("Best float: "+
                 formatInfo(
                     getSettings(), null,
                     getBestFloat(full_obj),
                     getBestQuality(full_obj))
             );
             if(full_obj.results.length == 1)
-                progress.updateAmount("Found "+Object.keys(filterRows(full_obj, sett, sett.filter_by).results).length
+                progress.updateText2("Found "+Object.keys(filterRows(full_obj, sett, sett.filter_by).results).length
                     +" offer above "+sett.qualities[sett.filter_by].limit+"%");
             else
             {
-                progress.updateAmount("Found "+Object.keys(filterRows(full_obj, sett, sett.filter_by).results).length
+                progress.updateText2("Found "+Object.keys(filterRows(full_obj, sett, sett.filter_by).results).length
                     +" offers above "+sett.qualities[sett.filter_by].limit+"%");
             }
         }
@@ -295,7 +295,7 @@ async function scanMultipleFloats(count, sett, progress, lists)
         );
         if(json.success != true)
         {
-            progress.updateMore("Steam timed-out, retrying...");
+            progress.updateText3("Steam timed-out, retrying...");
             await sleep(sett.request_delay);
             continue;
         }
@@ -316,31 +316,7 @@ async function betterScan(count)
 {
     if(scanning)
         return 0;
-    const progress = new LoadingOverlayProgress(
-        {
-            bar: {
-                "position": "absolute",
-                "background": "#16202D",
-                "bottom": "100px",
-                "height": "30px",
-                "-webkit-transition": "all 0.5s linear",
-                "-moz-transition": "all 0.5s linear",
-                "-o-transition": "all 0.5s linear",
-                "-ms-transition": "all 0.5s linear",
-                "transition": "all 0.5s linear",
-            },
-            text: {
-                "position": "absolute",
-                "color": "#16202D",
-                "bottom": "135px",
-                "font-size": "32px",
-                "-webkit-transition": "all 0.5s linear",
-                "-moz-transition": "all 0.5s linear",
-                "-o-transition": "all 0.5s linear",
-                "-ms-transition": "all 0.5s linear",
-                "transition": "all 0.5s linear",
-            }
-        });
+    const progress = new LoadingOverlayProgress(OVERLAY_PROGRESS_SETTINGS);
     //const count = prompt("Input number of ITEMS");
     if(count < 1 || isNaN(count))
         return 0;
@@ -349,7 +325,7 @@ async function betterScan(count)
     $.LoadingOverlay("show", {
         custom: progress.init()
     });
-    progress.updateBestInfo("Starting scan");
+    progress.updateText1("Starting scan");
     progress.updateProgress(0, "0/"+count, 0);
 
     const sett = getSettings();
@@ -357,9 +333,9 @@ async function betterScan(count)
     {
         const new_ses = await scanMultipleFloats(count, /*$.extend(true, {}, getSettings(), {currency: 2})*/sett, progress, getListings());
         new_ses.info.c = sett.currency;
-        progress.updateMore("");
-        progress.updateBestInfo("Setting up the view...");
-        progress.updateAmount("Please be patient");
+        progress.updateText3("");
+        progress.updateText1("Setting up the view...");
+        progress.updateText2("Please be patient");
 
         const sid = Math.abs(Date.now());
         addSession(getSessions(), filterRows(new_ses, sett, sett.session_threshold), sid);
@@ -370,7 +346,7 @@ async function betterScan(count)
     catch(e)
     {
         console.log(e);
-        progress.updateMore("Steam timed-out, try again");
+        progress.updateText3("Steam timed-out, try again");
         await sleep(2500);
     }
     finally
@@ -536,25 +512,11 @@ async function scan()
 {
     if(scanning)
         return 0;
-    const progress = new LoadingOverlayProgress(
-        {
-            bar: {
-                "position": "absolute",
-                "background": "#16202D",
-                "bottom": "100px",
-                "height": "30px"
-            },
-            text: {
-                "position": "absolute",
-                "color": "#16202D",
-                "bottom": "135px",
-                "font-size": "32px"
-            }
-        });
+    const progress = new LoadingOverlayProgress(OVERLAY_PROGRESS_SETTINGS);
     $.LoadingOverlay("show", {
         custom: progress.init()
     });
-    progress.updateBestInfo("Starting scan");
+    progress.updateText1("Starting scan");
     if(! await page(1, 10))
     {
         alert("Please manually navigate to page 1");
@@ -573,7 +535,7 @@ async function scan()
     const offers = {};
     offers.results = {};
     let best = "Loading floats...";
-    progress.updateBestInfo(best);
+    progress.updateText1(best);
     for(let i = 0; i < pages; i ++)
     {
         const off = await scanFloat();
@@ -586,17 +548,17 @@ async function scan()
             break;
 
         progress.updateProgress(Math.round((i+1) * 100 / pages));
-        progress.updateBestInfo(best);
-        progress.updateMore("");
+        progress.updateText1(best);
+        progress.updateText3("");
 
         if(offers.results.length == 1)
-            progress.updateAmount("Found "+filterRows(offers, settings, settings.filter_by).results.length+" offer above "+settings.qualities[settings.filter_by].limit+"%");
+            progress.updateText2("Found "+filterRows(offers, settings, settings.filter_by).results.length+" offer above "+settings.qualities[settings.filter_by].limit+"%");
         else
-            progress.updateAmount("Found "+filterRows(offers, settings, settings.filter_by).results.length+" offers above "+settings.qualities[settings.filter_by].limit+"%");
+            progress.updateText2("Found "+filterRows(offers, settings, settings.filter_by).results.length+" offers above "+settings.qualities[settings.filter_by].limit+"%");
     }
-    progress.updateMore("");
-    progress.updateBestInfo("Setting up the view...");
-    progress.updateAmount("Please be patient");
+    progress.updateText3("");
+    progress.updateText1("Setting up the view...");
+    progress.updateText2("Please be patient");
 
     offers.best = {float: getBestFloat(offers), quality: getBestQuality(offers)};
     const sid = Math.abs(Date.now());
@@ -1004,31 +966,7 @@ async function findListingNew(info)
     if(id == undefined || id == null || name == undefined || name == null || price == undefined || price == null)
         return 0;
 
-    const progress = new LoadingOverlayProgress(
-        {
-            bar: {
-                "position": "absolute",
-                "background": "#16202D",
-                "bottom": "100px",
-                "height": "30px"/*,
-                 "-webkit-transition": "all 0.5s linear",
-                 "-moz-transition": "all 0.5s linear",
-                 "-o-transition": "all 0.5s linear",
-                 "-ms-transition": "all 0.5s linear",
-                 "transition": "all 0.5s linear",*/
-            },
-            text: {
-                "position": "absolute",
-                "color": "#16202D",
-                "bottom": "135px",
-                "font-size": "32px"/*,
-                 "-webkit-transition": "all 0.5s linear",
-                 "-moz-transition": "all 0.5s linear",
-                 "-o-transition": "all 0.5s linear",
-                 "-ms-transition": "all 0.5s linear",
-                 "transition": "all 0.5s linear",*/
-            }
-        });
+    const progress = new LoadingOverlayProgress(OVERLAY_PROGRESS_SETTINGS);
     con = true;
     searching = true;
     const url = decodeURI(window.location.href.replace(window.location.hash, ""));
@@ -1043,8 +981,8 @@ async function findListingNew(info)
     $.LoadingOverlay("show", {
         custom: progress.init()
     });
-    progress.updateMore("Searching for \""+name+"\"");
-    progress.updateAmount("Target price: "+price_as_string);
+    progress.updateText3("Searching for \""+name+"\"");
+    progress.updateText2("Target price: "+price_as_string);
     let current_price = 0;
     let current_price_as_string = "0";
     let start = 0;
@@ -1087,7 +1025,7 @@ async function findListingNew(info)
             }
         });
         if(current_price > 0)
-            progress.updateBestInfo("Current price: "+current_price_as_string);
+            progress.updateText1("Current price: "+current_price_as_string);
 
         current_price = isNaN(current_price) ? 0 : current_price;
         const target = $("#listing_"+id, tempDom);
@@ -1102,8 +1040,8 @@ async function findListingNew(info)
                 +"&currency="+sett.currency
                 +"#filter="+id;
             found = true;
-            progress.updateBestInfo("Listing found");
-            progress.updateAmount("Redirecting...");
+            progress.updateText1("Listing found");
+            progress.updateText2("Redirecting...");
             window.location.replace(new_url);
         }
         page += 1;
@@ -1266,31 +1204,7 @@ function addSession(sess, new_session, id)
 }
 async function filterSession(sess, session_id, sett)
 {
-    const progress = new LoadingOverlayProgress(
-        {
-            bar: {
-                "position": "absolute",
-                "background": "#16202D",
-                "bottom": "100px",
-                "height": "30px"/*,
-                 "-webkit-transition": "all 0.5s linear",
-                 "-moz-transition": "all 0.5s linear",
-                 "-o-transition": "all 0.5s linear",
-                 "-ms-transition": "all 0.5s linear",
-                 "transition": "all 0.5s linear",*/
-            },
-            text: {
-                "position": "absolute",
-                "color": "#16202D",
-                "bottom": "135px",
-                "font-size": "32px"/*,
-                 "-webkit-transition": "all 0.5s linear",
-                 "-moz-transition": "all 0.5s linear",
-                 "-o-transition": "all 0.5s linear",
-                 "-ms-transition": "all 0.5s linear",
-                 "transition": "all 0.5s linear",*/
-            }
-        });
+    const progress = new LoadingOverlayProgress(OVERLAY_PROGRESS_SETTINGS);
     con = true;
     searching = true;
     const session = sess[session_id];
@@ -1318,8 +1232,8 @@ async function filterSession(sess, session_id, sett)
     $.LoadingOverlay("show", {
         custom: progress.init()
     });
-    progress.updateMore("Removing sold listings for this session");
-    progress.updateAmount("Maximum price: "+max_price_s);
+    progress.updateText3("Removing sold listings for this session");
+    progress.updateText2("Maximum price: "+max_price_s);
     while(current_price < max_price * (1+(sett.search_threshold / 100)) && con)
     {
         await sleep(sett.request_delay);
@@ -1354,7 +1268,7 @@ async function filterSession(sess, session_id, sett)
             }
         });
         if(current_price > 0)
-            progress.updateBestInfo("Current price: "+current_price_as_string);
+            progress.updateText1("Current price: "+current_price_as_string);
 
         current_price = isNaN(current_price) ? 0 : current_price;
         start += max_count;
@@ -1372,9 +1286,9 @@ async function filterSession(sess, session_id, sett)
                 amount ++;
             }
         }
-        progress.updateMore("");
-        progress.updateBestInfo("Finished");
-        progress.updateAmount("Removed "+amount+" sold listings");
+        progress.updateText3("");
+        progress.updateText1("Finished");
+        progress.updateText2("Removed "+amount+" sold listings");
         await sleep(2500);
         $.LoadingOverlay("hide");
     }

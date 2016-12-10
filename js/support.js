@@ -132,6 +132,30 @@ const API_URL = "https://api.csgofloat.com:1738/?url=";
  */
 const ICON_URL = "http://steamcommunity-a.akamaihd.net/economy/image/";
 const KEY_IGNORE = [112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 9, 192, 13, 16];
+const OVERLAY_PROGRESS_SETTINGS = {
+    bar: {
+        "position": "absolute",
+        "background": "#16202D",
+        "bottom": "75px",
+        "height": "30px"/*,
+         "-webkit-transition": "all 0.5s linear",
+         "-moz-transition": "all 0.5s linear",
+         "-o-transition": "all 0.5s linear",
+         "-ms-transition": "all 0.5s linear",
+         "transition": "all 0.5s linear",*/
+    },
+    text: {
+        "position": "absolute",
+        "color": "#16202D",
+        "bottom": "110px",
+        "font-size": "32px"/*,
+         "-webkit-transition": "all 0.5s linear",
+         "-moz-transition": "all 0.5s linear",
+         "-o-transition": "all 0.5s linear",
+         "-ms-transition": "all 0.5s linear",
+         "transition": "all 0.5s linear",*/
+    }
+};;;;;;
 const CURRENCIES = {
     1: {
         name: "US Dollar",
@@ -251,7 +275,7 @@ const STORAGE_SESSIONS = "sessions";
 const ID_ONE_PAGE_SCAN = "one_page_scan";
 const ID_BATCH_SCAN = "batch_scan";
 const ID_CLEAR_CACHE = "clear_cache";
-const ID_FILTER_SESSION = "filter_session";;;
+const ID_FILTER_SESSION = "filter_session";
 const TYPE_NOTIFY = "TYPE_NOTIFY";
 const TYPE_UPDATE_SETTINGS = "TYPE_UPDATE_SETTINGS";
 const TYPE_CLEAR_CACHE = "TYPE_CLEAR_CACHE";

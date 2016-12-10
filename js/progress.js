@@ -2,10 +2,10 @@ const LoadingOverlayProgress = function(options)
 {
     let _bar;
     let _text;
-    let _info;
-    let _amount;
+    let _second;
+    let _first;
     let _progress;
-    let _more;
+    let _third;
     let _settings = $.extend(true, {}, {
         bar: {
             "bottom": "25px",
@@ -22,9 +22,9 @@ const LoadingOverlayProgress = function(options)
     return {
         init: init,
         updateProgress: updateProgress,
-        updateBestInfo: updateBestInfo,
-        updateAmount: updateAmount,
-        updateMore: updateMore,
+        updateText1: updateText1,
+        updateText2: updateText2,
+        updateText3: updateText3,
         getProgress: getProgress
     };
 
@@ -46,7 +46,7 @@ const LoadingOverlayProgress = function(options)
                     "width": "100%"
                 }
             }).appendTo(wrapper);
-        _more = $("<p>",
+        _third = $("<p>",
             {
                 class: "loading_overlay_progress_more",
                 css: {
@@ -56,7 +56,7 @@ const LoadingOverlayProgress = function(options)
                     "color": "#16202D"
                 }
             }).appendTo(p_wrap);
-        _info = $("<p>",
+        _first = $("<p>",
             {
                 class: "loading_overlay_progress_price",
                 css: {
@@ -66,7 +66,7 @@ const LoadingOverlayProgress = function(options)
                     "color": "#16202D"
                 }
             }).appendTo(p_wrap);
-        _amount = $("<p>",
+        _second = $("<p>",
             {
                 class: "loading_overlay_progress_amount",
                 css: {
@@ -107,19 +107,19 @@ const LoadingOverlayProgress = function(options)
         _progress = tracker;
     }
 
-    function updateBestInfo(value)
+    function updateText1(value)
     {
-        _info.text(value);
+        _first.text(value);
     }
 
-    function updateAmount(value)
+    function updateText2(value)
     {
-        _amount.text(value);
+        _second.text(value);
     }
 
-    function updateMore(value)
+    function updateText3(value)
     {
-        _more.text(value);
+        _third.text(value);
     }
     function getProgress()
     {
