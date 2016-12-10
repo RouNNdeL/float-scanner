@@ -233,6 +233,7 @@ async function generateFloats(raw_json, sett, progress, count, lists, obj)
         finally
         {
             const full_obj = $.extend(true, {}, obj, {results: results});
+            progress.updateMore("");
             progress.updateProgress(
                 ((progress.getProgress()+1) / count) * 100,
                 progress.getProgress()+1+"/"+count,
@@ -356,6 +357,7 @@ async function betterScan(count)
     {
         const new_ses = await scanMultipleFloats(count, /*$.extend(true, {}, getSettings(), {currency: 2})*/sett, progress, getListings());
         new_ses.info.c = sett.currency;
+        progress.updateMore("");
         progress.updateBestInfo("Setting up the view...");
         progress.updateAmount("Please be patient");
 
@@ -585,13 +587,14 @@ async function scan()
 
         progress.updateProgress(Math.round((i+1) * 100 / pages));
         progress.updateBestInfo(best);
+        progress.updateMore("");
 
         if(offers.results.length == 1)
             progress.updateAmount("Found "+filterRows(offers, settings, settings.filter_by).results.length+" offer above "+settings.qualities[settings.filter_by].limit+"%");
         else
             progress.updateAmount("Found "+filterRows(offers, settings, settings.filter_by).results.length+" offers above "+settings.qualities[settings.filter_by].limit+"%");
     }
-
+    progress.updateMore("");
     progress.updateBestInfo("Setting up the view...");
     progress.updateAmount("Please be patient");
 
@@ -1040,7 +1043,7 @@ async function findListingNew(info)
     $.LoadingOverlay("show", {
         custom: progress.init()
     });
-    progress.updateBestInfo("Searching for \""+name+"\"");
+    progress.updateMore("Searching for \""+name+"\"");
     progress.updateAmount("Target price: "+price_as_string);
     let current_price = 0;
     let current_price_as_string = "0";
@@ -1315,7 +1318,7 @@ async function filterSession(sess, session_id, sett)
     $.LoadingOverlay("show", {
         custom: progress.init()
     });
-    progress.updateBestInfo("Removing sold listings for this session");
+    progress.updateMore("Removing sold listings for this session");
     progress.updateAmount("Maximum price: "+max_price_s);
     while(current_price < max_price * (1+(sett.search_threshold / 100)) && con)
     {
@@ -1369,6 +1372,7 @@ async function filterSession(sess, session_id, sett)
                 amount ++;
             }
         }
+        progress.updateMore("");
         progress.updateBestInfo("Finished");
         progress.updateAmount("Removed "+amount+" sold listings");
         await sleep(2500);

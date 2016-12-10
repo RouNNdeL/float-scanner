@@ -41,7 +41,7 @@ const LoadingOverlayProgress = function(options)
         const p_wrap = $("<div>",
             {
                 css: {
-                    "bottom": "200px",
+                    "bottom": "150px",
                     "position": "absolute",
                     "width": "100%"
                 }
@@ -54,8 +54,7 @@ const LoadingOverlayProgress = function(options)
                     "text-align": "center",
                     "font-size": "24px",
                     "color": "#16202D"
-                },
-                text: ""
+                }
             }).appendTo(p_wrap);
         _info = $("<p>",
             {
@@ -65,8 +64,7 @@ const LoadingOverlayProgress = function(options)
                     "text-align": "center",
                     "font-size": "24px",
                     "color": "#16202D"
-                },
-                text: "Scanning floats..."
+                }
             }).appendTo(p_wrap);
         _amount = $("<p>",
             {
@@ -76,8 +74,7 @@ const LoadingOverlayProgress = function(options)
                     "text-align": "center",
                     "font-size": "24px",
                     "color": "#16202D"
-                },
-                text: ""
+                }
             }).appendTo(p_wrap);
         _bar = $("<div>", {
             class: "loadingoverlay_progress_bar",
