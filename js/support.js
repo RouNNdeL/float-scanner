@@ -155,7 +155,7 @@ const OVERLAY_PROGRESS_SETTINGS = {
          "-ms-transition": "all 0.5s linear",
          "transition": "all 0.5s linear",*/
     }
-};;;;;;
+};
 const CURRENCIES = {
     1: {
         name: "US Dollar",
@@ -250,13 +250,13 @@ const DEFAULT_SETTINGS = {
     cache_size: 0, //Not really a setting, but its easier to pass it that way
     filter_by: 1,
     session_threshold: 0,
-    currency: 1,
+    currency: 3,
 
     lang: "english",
 
     float_places: 3,
     request_delay: 5000,
-    search_threshold: 2, /*Value for price overdue in percentage before canceling search */
+    search_threshold: 5, /*Value for price overdue in percentage before canceling search */
     search_precaution: 100, /*How many results to display and then filtter while searching for a listing. Max: 100 (Steam limitations)*/
     date_format: "H:MM, m/d/yy",
     row_background: "#16202D",

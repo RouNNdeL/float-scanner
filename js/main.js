@@ -174,12 +174,20 @@ async function generateFloats(raw_json, sett, progress, count, lists, obj)
         const link = API_URL+asset.actions[0].link.replace("%assetid%", a.id);
         try
         {
+            const obj = $.extend(true, {}, getInfoFromHtml(raw_json.results_html, k));
+            if(! obj.price_with_fee.match(/\d/))
+                continue;
             let r;
             if(lists.hasOwnProperty(k))
             {
                 r = {};
                 const raw = lists[k];
-                r.iteminfo = {floatvalue: raw.i.fv, item_name: raw.i.n, min: raw.i.m, max: raw.i.x};
+                r.iteminfo = {
+                    floatvalue: raw.i.f,
+                    item_name: raw.i.n,
+                    min: raw.i.m,
+                    max: raw.i.x
+                };
                 await sleep(20);
             }
             else
@@ -188,8 +196,9 @@ async function generateFloats(raw_json, sett, progress, count, lists, obj)
                 const info = r.iteminfo;
                 const stripped = {
                     d: Date.now(),
+                    p: obj.price_with_fee,
                     i: {
-                        fv: info.floatvalue,
+                        f: info.floatvalue,
                         m: info.min,
                         x: info.max,
                         n: info.item_name
@@ -209,9 +218,6 @@ async function generateFloats(raw_json, sett, progress, count, lists, obj)
                 bestFloat = f;
                 bestQuality = quality;
             }
-            const obj = $.extend(true, {}, getInfoFromHtml(raw_json.results_html, k));
-            if(! obj.price_with_fee.match(/\d/))
-                continue;
             obj.float = f;
             obj.quality = quality;
             obj.url = asset.actions[0].url;
@@ -305,6 +311,15 @@ async function scanMultipleFloats(count, sett, progress, lists)
         start += max_count;
         count -= max_count;
     }
+    const ids = [];
+    for(let k in obj.results)
+    {
+        if(! obj.results.hasOwnProperty(k))
+            continue;
+        ids.push(k)
+    }
+    setListings();
+    removeSoldListings(getListings(), getMaximumPrice(obj.results).i, ids);
     return obj;
 }
 function initializeScan()
@@ -332,7 +347,7 @@ async function betterScan(count)
     try
     {
         const new_ses = await scanMultipleFloats(count, /*$.extend(true, {}, getSettings(), {currency: 2})*/sett, progress, getListings());
-        new_ses.info.c = sett.currency;
+        new_ses.info.currency = sett.currency;
         progress.updateText3("");
         progress.updateText1("Setting up the view...");
         progress.updateText2("Please be patient");
@@ -688,7 +703,7 @@ function showResults(session, sett, filter, overtwrie = true)
                 name: name,
                 price: price,
                 session_before: session_before,
-                currency: session.info.c
+                currency: session.info.currency
             };
             window.location.href = "#search="+encodeURI(JSON.stringify(info));
         });
@@ -1055,6 +1070,7 @@ async function findListingNew(info)
         if(remove)
         {
             removeItemFromSession(getSessions(), session_before, id);
+            saveSessions();
         }
         if(session_before !== null)
             window.location.replace("#session_id="+session_before);
@@ -1200,7 +1216,85 @@ function loadSettings()
 function addSession(sess, new_session, id)
 {
     sess[id] = new_session;
-    window.localStorage.setItem(STORAGE_SESSIONS, LZString.compress(JSON.stringify(sess)));
+    const tmp = {};
+    for(let k in sess)
+    {
+        if(! sess.hasOwnProperty(k))
+            continue;
+        tmp[k] = compressSession(sess[k]);
+    }
+    try
+    {
+        tmp[id] = compressSession(new_session);
+        window.localStorage.setItem(STORAGE_SESSIONS, LZString.compress(JSON.stringify(tmp)));
+    }
+    catch(e)
+    {
+        console.log(e);
+        window.localStorage.setItem(STORAGE_SESSIONS, LZString.compress(JSON.stringify(sess)));
+    }
+}
+
+function removeItemFromSession(sess, session_id, item_id)
+{
+    delete sess[session_id].results[item_id];
+}
+function getSessions()
+{
+    return sessions;
+}
+function removeSession(sessions, id)
+{
+    const tmp = $.extend(true, {}, sessions);
+    delete tmp[id];
+    for(let k in tmp)
+    {
+        if(! tmp.hasOwnProperty(k))
+            continue;
+        tmp[k] = compressSession(tmp[k]);
+    }
+    window.localStorage.setItem(STORAGE_SESSIONS, LZString.compress(JSON.stringify()));
+}
+function saveSessions()
+{
+    const all = getSessions();
+    const tmp = {};
+    for(let k in all)
+    {
+        if(! all.hasOwnProperty(k))
+            continue;
+        tmp[k] = compressSession(all[k]);
+    }
+    window.localStorage.setItem(STORAGE_SESSIONS, LZString.compress(JSON.stringify(tmp)));
+}
+function setSessions()
+{
+    const item = window.localStorage.getItem(STORAGE_SESSIONS);
+    if(item == null || item == undefined || item.length <= 0)
+    {
+        sessions = {};
+    }
+    else
+    {
+        const decompressed = LZString.decompress(item);
+        sessions = $.parseJSON(decompressed);
+    }
+    for(let k in sessions)
+    {
+        if(! sessions.hasOwnProperty(k))
+            continue;
+        try
+        {
+            sessions[k] = decompressSession(sessions[k])
+        }
+        catch(e)
+        {
+        }
+    }
+}
+function clearSessions()
+{
+    window.localStorage.removeItem(STORAGE_SESSIONS);
 }
 async function filterSession(sess, session_id, sett)
 {
@@ -1213,7 +1307,7 @@ async function filterSession(sess, session_id, sett)
     const max_price = max.i;
     const max_price_s = max.s;
     const ids = [];
-    const currency = session.info.c || sett.currency;
+    const currency = session.info.currency || sett.currency;
     const price = 0;
     let current_price = 0;
     let current_price_as_string = "0";
@@ -1232,9 +1326,13 @@ async function filterSession(sess, session_id, sett)
     $.LoadingOverlay("show", {
         custom: progress.init()
     });
+    const max_price_with_threshold = max_price * (1+(sett.search_threshold / 100));
     progress.updateText3("Removing sold listings for this session");
-    progress.updateText2("Maximum price: "+max_price_s);
-    while(current_price < max_price * (1+(sett.search_threshold / 100)) && con)
+    progress.updateText2("Maximum price: "
+        +max_price_s
+            .replace(/,/, ".")
+            .replace(max_price, max_price_with_threshold.toFixed(2)));
+    while(current_price < max_price_with_threshold && con)
     {
         await sleep(sett.request_delay);
         const json = await getMultipleListings(
@@ -1251,9 +1349,10 @@ async function filterSession(sess, session_id, sett)
         listings.each(function(i)
         {
             const match = $(this).attr("id").match(/listing_(\d+)/);
-            if(match != null && match[1] != null)
+            const price = $(this).find(".market_listing_price_with_fee").text();
+            if(match != null && match[1] != null && price.match(/\d/) != null)
             {
-                const id = parseInt(match[1]);
+                const id = match[1];
                 ids.push(id);
             }
         });
@@ -1280,53 +1379,111 @@ async function filterSession(sess, session_id, sett)
         {
             if(! items.hasOwnProperty(k))
                 continue;
-            if(ids.indexOf(parseInt(k)) < 0)
+            if(ids.indexOf(k) < 0)
             {
                 removeItemFromSession(sess, session_id, k);
                 amount ++;
             }
         }
+        const lists = getListings();
+        removeSoldListings(lists, max_price_with_threshold, ids);
+        saveSessions();
         progress.updateText3("");
         progress.updateText1("Finished");
         progress.updateText2("Removed "+amount+" sold listings");
         await sleep(2500);
         $.LoadingOverlay("hide");
     }
+    else
+    {
+        $.LoadingOverlay("hide");
+    }
     con = false;
     searching = false;
 }
-function removeItemFromSession(sess, session_id, item_id)
+function compressSession(session)
 {
+    const compressed = {};
+    compressed.i = {
+        g: session.info.game,
+        n: session.info.name,
+        c: session.info.currency,
+        i: session.info.img
+    };
+    compressed.b = {
+        f: session.best.float,
+        q: session.best.quality
+    };
+    compressed.r = {};
+    for(let k in session.results)
+    {
+        if(! session.results.hasOwnProperty(k))
+            continue;
+        const result = session.results[k];
+        compressed.r[k] = {
+            f: result.float,
+            q: result.quality,
+            p: result.price_with_fee,
+            o: result.price_fee_only,
+            w: result.price_without_fee,
+            s: result.seller
+        }
+    }
+    return compressed;
+}
+function decompressSession(session)
+{
+    const decompressed = {};
+    decompressed.info = {
+        game: session.i.g,
+        name: session.i.n,
+        currency: session.i.c,
+        img: session.i.i
+    };
+    decompressed.best = {
+        float: session.b.f,
+        quality: session.b.q
+    };
+    decompressed.results = {};
+    for(let k in session.r)
+    {
+        if(! session.r.hasOwnProperty(k))
+            continue;
+        const result = session.r[k];
+        decompressed.results[k] = {
+            float: result.f,
+            quality: result.q,
+            price_with_fee: result.p,
+            price_fee_only: result.o,
+            price_without_fee: result.w,
+            seller: result.s
+        }
+    }
+    return decompressed;
+}
 
-    delete sess[session_id].results[item_id];
-    window.localStorage.setItem(STORAGE_SESSIONS, LZString.compress(JSON.stringify(sess)));
-}
-function getSessions()
+function removeSoldListings(lists, max_price, ids)
 {
-    return sessions;
-}
-function removeSession(sessions, id)
-{
-    const tmp = $.extend(true, {}, sessions);
-    delete tmp[id];
-    window.localStorage.setItem(STORAGE_SESSIONS, LZString.compress(JSON.stringify(tmp)));
-}
-function setSessions()
-{
-    const item = window.localStorage.getItem(STORAGE_SESSIONS);
-    if(item == null || item == undefined)
+    let c = 0;
+    for(let k in lists)
     {
-        sessions = {};
+        if(! lists.hasOwnProperty(k))
+            continue;
+        const price = parseFloat(lists[k].p.replace(/,/, ".").replace(/[^[\d,.]]/gm, ""));
+        if(price < max_price && ids.indexOf(k) < 0)
+        {
+            delete lists[k];
+            c ++;
+        }
     }
-    else
-    {
-        const decompressed = LZString.decompress(item);
-        sessions = $.parseJSON(decompressed);
-    }
+    console.log("Removed %s sold listings", c);
+    saveListings(lists);
 }
-function clearSessions()
+function saveListings(lists)
 {
-    window.localStorage.removeItem(STORAGE_SESSIONS);
+    const all_lists = getAllListings();
+    all_lists[getNameFromUrl()] = lists;
+    saveAllListings(all_lists, true);
 }
 function addListing(id, new_listing)
 {
@@ -1407,6 +1564,7 @@ function clearListingsOlderThen(days)
     }
     saveAllListings(allListings, true);
 }
+
 function getNameFromUrl(url = null)
 {
     const regex = /steamcommunity\.com\/market\/listings\/730\/([^\/\?]+)(?=#|\/\?|\?|\/)/;
