@@ -26,7 +26,7 @@ $(function()
     setup("#market_buyorder_info", buttons);
     //setupCacheInfo(Math.floor(byteCount(LZString.compress(JSON.stringify(getListings()))) * 100 / 1024) / 100);
 });
-$(document).keyup(function(e)
+$(document).keyup(async function(e)
 {
     if(scanning)
     {
@@ -82,7 +82,7 @@ function hashActions(sess)
         {
             $("#"+ID_ONE_PAGE_SCAN).add("#"+ID_FILTER_SESSION).remove();
             showResults(sess[sid], getSettings());
-            const before = $("#market_commodity_buyrequests");
+            const before = $("#"+ID_BATCH_SCAN).parent();
             const btn = generateButton(ID_FILTER_SESSION, "Filter session", function()
             {
                 filterSession(sess, sid, getSettings());
@@ -188,7 +188,10 @@ async function generateFloats(raw_json, sett, progress, count, lists, obj)
                     min: raw.i.m,
                     max: raw.i.x
                 };
+                const t1 = Date.now();
                 await sleep(20);
+                const t2 = Date.now();
+                console.log("Function took: %s", (t2-t1) / 1000)
             }
             else
             {
@@ -319,7 +322,9 @@ async function scanMultipleFloats(count, sett, progress, lists)
         ids.push(k)
     }
     setListings();
-    removeSoldListings(getListings(), getMaximumPrice(obj.results).i, ids);
+    const max_price = getMaximumPrice(obj.results).i;
+    const price_threshold = max_price * (sett.search_threshold / 100);
+    removeSoldListings(getListings(), (max_price-price_threshold), ids);
     return obj;
 }
 function initializeScan()
@@ -346,7 +351,7 @@ async function betterScan(count)
     const sett = getSettings();
     try
     {
-        const new_ses = await scanMultipleFloats(count, /*$.extend(true, {}, getSettings(), {currency: 2})*/sett, progress, getListings());
+        const new_ses = await scanMultipleFloats(count, sett, progress, getListings());
         new_ses.info.currency = sett.currency;
         progress.updateText3("");
         progress.updateText1("Setting up the view...");
@@ -484,7 +489,7 @@ function setupCacheInfo(size)
         class: "market_listing_filter_contents"
     });
     const btn = generateButton(ID_CLEAR_CACHE, "Clear cache", clearListings);
-    const content = $.parseHTML("<h2 class=\"market_section_title\">Cache</h2>Cache size: "+size+"kb");
+    const content = $.parseHTML("<h2 class=\"market_section_title\">Cache</h2>Cache size: "+size.toFixed(2)+"kb");
     content_container.append(btn);
     content_container.append(content);
     container.append(content_container);
@@ -1253,7 +1258,7 @@ function removeSession(sessions, id)
             continue;
         tmp[k] = compressSession(tmp[k]);
     }
-    window.localStorage.setItem(STORAGE_SESSIONS, LZString.compress(JSON.stringify()));
+    window.localStorage.setItem(STORAGE_SESSIONS, LZString.compress(JSON.stringify(tmp)));
 }
 function saveSessions()
 {
@@ -1289,6 +1294,7 @@ function setSessions()
         }
         catch(e)
         {
+            console.error(e);
         }
     }
 }
@@ -1326,13 +1332,13 @@ async function filterSession(sess, session_id, sett)
     $.LoadingOverlay("show", {
         custom: progress.init()
     });
-    const max_price_with_threshold = max_price * (1+(sett.search_threshold / 100));
+    const price_threshold = max_price * (sett.search_threshold / 100);
     progress.updateText3("Removing sold listings for this session");
     progress.updateText2("Maximum price: "
         +max_price_s
             .replace(/,/, ".")
-            .replace(max_price, max_price_with_threshold.toFixed(2)));
-    while(current_price < max_price_with_threshold && con)
+            .replace(max_price, (max_price+price_threshold).toFixed(2)));
+    while(current_price < max_price+price_threshold && con)
     {
         await sleep(sett.request_delay);
         const json = await getMultipleListings(
@@ -1386,7 +1392,7 @@ async function filterSession(sess, session_id, sett)
             }
         }
         const lists = getListings();
-        removeSoldListings(lists, max_price_with_threshold, ids);
+        removeSoldListings(lists, max_price-price_threshold, ids);
         saveSessions();
         progress.updateText3("");
         progress.updateText1("Finished");
@@ -1403,6 +1409,8 @@ async function filterSession(sess, session_id, sett)
 }
 function compressSession(session)
 {
+    if(session.hasOwnProperty("i") && session.hasOwnProperty("b") && session.hasOwnProperty("r"))
+        return session;
     const compressed = {};
     compressed.i = {
         g: session.info.game,
@@ -1420,19 +1428,21 @@ function compressSession(session)
         if(! session.results.hasOwnProperty(k))
             continue;
         const result = session.results[k];
+        const match = result.seller.match(new RegExp(AVATAR_URL+"(.*)"));
         compressed.r[k] = {
             f: result.float,
             q: result.quality,
             p: result.price_with_fee,
             o: result.price_fee_only,
             w: result.price_without_fee,
-            s: result.seller
+            s: match !== null ? AVATAR_SHORT+match[1] : result.seller
         }
     }
     return compressed;
 }
 function decompressSession(session)
 {
+    console.log(session);
     const decompressed = {};
     decompressed.info = {
         game: session.i.g,
@@ -1450,15 +1460,17 @@ function decompressSession(session)
         if(! session.r.hasOwnProperty(k))
             continue;
         const result = session.r[k];
+        const match = result.s.match(new RegExp(AVATAR_SHORT+"(.*)"));
         decompressed.results[k] = {
             float: result.f,
             quality: result.q,
             price_with_fee: result.p,
             price_fee_only: result.o,
             price_without_fee: result.w,
-            seller: result.s
+            seller: match !== null ? AVATAR_URL+match[1] : result.s
         }
     }
+    console.log(decompressed);
     return decompressed;
 }
 
@@ -1502,12 +1514,13 @@ function getListings()
 function setListings()
 {
     let allListings = getAllListings();
-    listings = allListings[getNameFromUrl()] || {};
-    setupCacheInfo(Math.floor(
-            byteCount(
-                LZString.compress(JSON.stringify(listings))) * 100 / 1024
-        ) / 100
-    );
+    const name = getNameFromUrl();
+    listings = allListings[name] || {};
+    const compress = LZString.compress(JSON.stringify(listings));
+    if(byteCount(compress) <= 16)
+        setupCacheInfo(0);
+    else
+        setupCacheInfo(byteCount(compress+name+"{}") / 1024);
 }
 function clearAllListings()
 {
@@ -1527,10 +1540,14 @@ function saveAllListings(lists, update)
     if(update === true)
     {
         const tmp = $.extend(true, {}, getSettings());
-        tmp.cache_size = byteCount(LZString.compress(JSON.stringify(lists)));
+        let uncompressed = JSON.stringify(lists);
+        /*uncompressed = uncompressed.replace(/\\"/g,"\uFFFF"); //U+ FFFF
+         uncompressed = uncompressed.replace(/\"([^"]+)\":/g,"$1:").replace(/\uFFFF/g,"\\\"");*/
+        const compress = LZString.compress(uncompressed);
+        tmp.cache_size = byteCount(compress);
         saveSettings(tmp);
         setListings();
-        window.localStorage.setItem(STORAGE_LISTINGS, LZString.compress(JSON.stringify(lists)));
+        window.localStorage.setItem(STORAGE_LISTINGS, compress);
     }
 }
 function getAllListings()
@@ -1543,7 +1560,10 @@ function fetchAllListings()
     if(item == null || item == undefined)
         all_listings = {};
     else
-        all_listings = $.parseJSON(LZString.decompress(item))
+    {
+        const decompress = LZString.decompress(item);
+        all_listings = $.parseJSON(decompress);
+    }
 }
 function clearListingsOlderThen(days)
 {

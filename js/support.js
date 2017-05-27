@@ -269,6 +269,8 @@ const EXTERIOR_LIMITS = {
     "Well-Worn": [0.38, 0.45],
     "Battle-Scarred": [0.45, 1]
 };
+const AVATAR_URL = "http://cdn.edgecast.steamstatic.com/steamcommunity/public/images/avatars";
+const AVATAR_SHORT = "!%#";
 const STORAGE_SETTINGS = "settings";
 const STORAGE_LISTINGS = "listings";
 const STORAGE_SESSIONS = "sessions";
