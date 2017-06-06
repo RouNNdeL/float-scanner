@@ -345,8 +345,8 @@ function generateSetting(name, value, color, size, weight, format, id)
         "                <input class=\"small-margin black-text format\" type=\"text\" id=\""+id+"-format\" value=\""+format+"\">"+
         "            </div>"+
         "            <div class=\"row\">"+
-        "                <label for=\""+id+"-example\">Example:</label>"+
-        "                <div class=\"example-container\" style=\"background-color: "+settings.row_background+";\">"+
+        "                <label for=\""+id+"-example\">Preview:</label>"+
+        "                <div class=\"example-container\" style=\"margin-top: 4px; background-color: "+settings.row_background+";\">"+
         "                    <p id=\""+id+"-example\" style=\"font-size: "+size+"; font-weight: "+weight+"; color: "+color+";\" class=\"example\">0.12345 (56%)</p>"+
         "                </div>"+
         "            </div>"+

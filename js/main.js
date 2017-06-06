@@ -230,14 +230,7 @@ async function generateFloats(raw_json, sett, progress, count, lists, obj)
         }
         catch(error)
         {
-            console.log("Error: ", error);
-            const obj = $.extend(true, {}, getInfoFromHtml(raw_json.results_html, k));
-            obj.float = null;
-            obj.quality = null;
-            obj.url = asset.actions[0].url;
-            img = fillImgTemplate(asset);
-            name = asset.market_name;
-            results[k] = obj;
+            console.error("Error: ", error);
         }
         finally
         {
@@ -365,7 +358,7 @@ async function betterScan(count)
     }
     catch(e)
     {
-        console.log(e);
+        console.error(e);
         progress.updateText3("Steam timed-out, try again");
         await sleep(2500);
     }
@@ -470,7 +463,7 @@ async function scanFloat()
         }
         catch(error)
         {
-            console.log("Error: ", error);
+            console.error("Error: ", error);
         }
     }
     in_progress = false;
@@ -893,7 +886,7 @@ function getBestFloat(obj)
     let best = 1;
     for(let k in obj.results)
     {
-        if(obj.results.hasOwnProperty(k))
+        if(obj.results.hasOwnProperty(k) && obj.results[k].float !== 0)
             best = Math.min(obj.results[k].float, best);
     }
     return best;
@@ -905,7 +898,7 @@ function getBestQuality(obj)
     let best = 0;
     for(let k in obj.results)
     {
-        if(obj.results.hasOwnProperty(k))
+        if(obj.results.hasOwnProperty(k) && obj.results[k].quality !== 100)
             best = Math.max(obj.results[k].quality, best);
     }
     return best;
@@ -1235,7 +1228,7 @@ function addSession(sess, new_session, id)
     }
     catch(e)
     {
-        console.log(e);
+        console.error(e);
         window.localStorage.setItem(STORAGE_SESSIONS, LZString.compress(JSON.stringify(sess)));
     }
 }
@@ -1442,7 +1435,6 @@ function compressSession(session)
 }
 function decompressSession(session)
 {
-    console.log(session);
     const decompressed = {};
     decompressed.info = {
         game: session.i.g,
@@ -1470,7 +1462,6 @@ function decompressSession(session)
             seller: match !== null ? AVATAR_URL+match[1] : result.s
         }
     }
-    console.log(decompressed);
     return decompressed;
 }
 
