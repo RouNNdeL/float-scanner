@@ -70,14 +70,14 @@ function handlePopStateEvent(e)
 }
 function hashActions(sess)
 {
-    const session_match = window.location.hash.match(/session_id=(\d+)/);
+    const session_match = window.location.hash.match(/session_id=([\da-z]+)/);
     const search_match = window.location.hash.match(/search=(.+)/);
     const filter_match = window.location.hash.match(/filter=(\d+)/);
     const scan_match = window.location.hash.match(/scan=(\d+)/);
     let remove_hash = true;
     if(session_match && session_match[1])
     {
-        const sid = parseInt(session_match[1]);
+        const sid = session_match[1];
         if(sess[sid] !== null && sess[sid] !== undefined)
         {
             $("#"+ID_ONE_PAGE_SCAN).add("#"+ID_FILTER_SESSION).remove();
@@ -91,7 +91,9 @@ function hashActions(sess)
             remove_hash = false;
         }
         else
+        {
             alert("Invalid session ID");
+        }
     }
     if(search_match && search_match[1])
     {
@@ -188,10 +190,10 @@ async function generateFloats(raw_json, sett, progress, count, lists, obj)
                     min: raw.i.m,
                     max: raw.i.x
                 };
-                const t1 = Date.now();
+                //const t1 = Date.now();
                 await sleep(20);
-                const t2 = Date.now();
-                console.log("Function took: %s", (t2-t1) / 1000)
+                //const t2 = Date.now();
+                //console.log("Function took: %s", (t2-t1) / 1000)
             }
             else
             {
@@ -350,7 +352,7 @@ async function betterScan(count)
         progress.updateText1("Setting up the view...");
         progress.updateText2("Please be patient");
 
-        const sid = Math.abs(Date.now());
+        const sid = createSessionId();
         addSession(getSessions(), filterRows(new_ses, sett, sett.session_threshold), sid);
         await sleep(1000);
 
@@ -692,7 +694,7 @@ function showResults(session, sett, filter, overtwrie = true)
             const row = $("#listing_"+id);
             if(row.length != 1)
                 return 0;
-            const session_match = window.location.hash.match(/session_id=(\d+)/);
+            const session_match = window.location.hash.match(/session_id=([\da-z]+)/);
             const session_before = session_match == null ? null : parseInt(session_match[1]);
             const price = row.find(".market_listing_price_with_fee").text().replace(/[\s\t\n]/gm, "");
             const name = row.find(".market_listing_item_name").text().replace(/[\n]/gm, "");
@@ -764,6 +766,8 @@ function showSessionsOnMain(ses, sett)
         sessions_container.append(header);
         for(let k in ses)
         {
+            let append = true;
+
             if(! ses.hasOwnProperty(k))
                 continue;
             let s = SESSION_ROW_TEMPLATE;
@@ -779,14 +783,33 @@ function showSessionsOnMain(ses, sett)
             s = s.replaceAll("%info%", info);
             s = s.replaceAll("%sid%", k);
             s = s.replaceAll("%quantity%", Object.keys(ses[k].results).length);
-            s = s.replaceAll("%date%", new Date(parseInt(k)).format(sett.date_format));
+
+            if(k.match(/^\d+$/))
+            {
+                s = s.replaceAll("%date%", new Date(parseInt(k)).format(sett.date_format));
+            }
+            else
+            {
+                console.log(ses[k].date);
+                try
+                {
+                    s = s.replaceAll("%date%", new Date(parseInt(ses[k].date)).format(sett.date_format));
+                }
+                catch(e)
+                {
+                    removeSession(ses, k);
+                    append = false;
+                }
+            }
             const parsed = $($.parseHTML(s)[0]);
             parsed.find(".market_session_delete_button").click(function()
             {
                 removeSession(ses, k);
                 window.location.reload();
             });
-            sessions_container.append(parsed);
+
+            if(append)
+                sessions_container.append(parsed);
         }
     }
     if(sessions_container.find(".market_listing_row").length <= 0)
@@ -1213,6 +1236,7 @@ function loadSettings()
 }
 function addSession(sess, new_session, id)
 {
+    new_session.date = new Date().getTime();
     sess[id] = new_session;
     const tmp = {};
     for(let k in sess)
@@ -1405,6 +1429,7 @@ function compressSession(session)
     if(session.hasOwnProperty("i") && session.hasOwnProperty("b") && session.hasOwnProperty("r"))
         return session;
     const compressed = {};
+    compressed.d = session.date;
     compressed.i = {
         g: session.info.game,
         n: session.info.name,
@@ -1436,6 +1461,7 @@ function compressSession(session)
 function decompressSession(session)
 {
     const decompressed = {};
+    decompressed.date = session.d;
     decompressed.info = {
         game: session.i.g,
         name: session.i.n,
@@ -1599,4 +1625,15 @@ function onMessageListener(request, sender, callback)
         clearAllListings();
         callback(true);
     }
+}
+
+function createSessionId()
+{
+    let text = "";
+    const possible = "abcdefghijklmnopqrstuvwxyz0123456789";
+
+    for(let i = 0; i < 24; i ++)
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+    return text;
 }
