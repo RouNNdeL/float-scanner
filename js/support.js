@@ -130,7 +130,7 @@ const API_URL = "https://api.csgofloat.com:1738/?url=";
  The ip is never stored anywhere nor send to any external servers.
  Only used in the getCountryCode() function in popup.js file.
  */
-const ICON_URL = "http://steamcommunity-a.akamaihd.net/economy/image/";
+const ICON_URL = "https://steamcommunity-a.akamaihd.net/economy/image/";
 const KEY_IGNORE = [112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 9, 192, 13, 16];
 const OVERLAY_PROGRESS_SETTINGS = {
     bar: {
@@ -269,7 +269,7 @@ const EXTERIOR_LIMITS = {
     "Well-Worn": [0.38, 0.45],
     "Battle-Scarred": [0.45, 1]
 };
-const AVATAR_URL = "http://cdn.edgecast.steamstatic.com/steamcommunity/public/images/avatars";
+const AVATAR_URL = "https://cdn.edgecast.steamstatic.com/steamcommunity/public/images/avatars";
 const AVATAR_SHORT = "!%#";
 const STORAGE_SETTINGS = "settings";
 const STORAGE_LISTINGS = "listings";
@@ -424,7 +424,7 @@ const SESSION_ROW_TEMPLATE =
     "		    </span>"+
     "	    </div>"+
     "		<div class=\"market_listing_item_name_block\">"+
-    "		<span class=\"market_listing_item_name\" style=\"color: #D2D2D2;\"><a class=\"market_listing_item_name_link\" href=\"http://steamcommunity.com/market/listings/730/%name%#session_id=%sid%\">%name%</a></span><br>"+
+    "		<span class=\"market_listing_item_name\" style=\"color: #D2D2D2;\"><a class=\"market_listing_item_name_link\" href=\"https://steamcommunity.com/market/listings/730/%name%#session_id=%sid%\">%name%</a></span><br>"+
     "		<span class=\"market_listing_game_name\">%game%</span>"+
     "	</div>"+
     "	<div class=\"market_listing_edit_buttons actual_content\"  style=\"width: 160px;\">"+

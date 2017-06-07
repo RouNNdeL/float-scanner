@@ -379,9 +379,13 @@ function fillImgTemplate(data)
         if(! data.hasOwnProperty(k))
             continue;
         if(k == "icon_url")
-            s = s.replaceAll("%"+k+"%", ICON_URL+data[k]);
+        {
+            s = s.replaceAll("%"+k+"%", ICON_URL+data[k].replace(/http:\/\//, "https://"));
+        }
         else
+        {
             s = s.replaceAll("%"+k+"%", data[k]);
+        }
     }
     return s;
 }
@@ -771,14 +775,20 @@ function showSessionsOnMain(ses, sett)
             if(! ses.hasOwnProperty(k))
                 continue;
             let s = SESSION_ROW_TEMPLATE;
-            if(ses[k].best == null || ses[k].best == undefined || ses[k].info == null || ses[k].info == undefined || ses[k].results == null || ses[k].results == undefined)
+            if(ses[k].best == null || ses[k].best == undefined || ses[k].info == null || ses[k].info == undefined ||
+                ses[k].results == null || ses[k].results == undefined)
                 continue;
             //const tier = getTier(sett, ses[k].best.quality);
             const info = formatInfo(sett, null, ses[k].best.float, ses[k].best.quality);
             for(let i in ses[k].info)
             {
                 if(ses[k].info.hasOwnProperty(i))
-                    s = s.replaceAll("%"+i+"%", ses[k].info[i]);
+                {
+                    if(i === "img")
+                        s = s.replaceAll("%"+i+"%", ses[k].info[i].replace(/http:\/\//g, "https://"));
+                    else
+                        s = s.replaceAll("%"+i+"%", ses[k].info[i]);
+                }
             }
             s = s.replaceAll("%info%", info);
             s = s.replaceAll("%sid%", k);
@@ -790,7 +800,6 @@ function showSessionsOnMain(ses, sett)
             }
             else
             {
-                console.log(ses[k].date);
                 try
                 {
                     s = s.replaceAll("%date%", new Date(parseInt(ses[k].date)).format(sett.date_format));
