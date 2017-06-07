@@ -148,7 +148,7 @@ function generateButton(id, txt, onclick = null, remove)
     });
     btn.append(text);
     start.append(btn);
-    if(onclick !== null)
+    if(typeof onclick === "function")
         btn.click(onclick);
     return start;
 }
@@ -1125,10 +1125,58 @@ async function findListingNew(info)
     con = false;
     return 1;
 }
-function filterListing(id)
+async function filterListing(id)
 {
-    $(".market_listing_row").not("#listing_"+id).remove();
-    scanFloat();
+    $(".market_listing_row").not("#listing_"+id).remove(); //Remove every listing except the one we are looking for
+    await scanFloat();
+
+    const inspectLink = scanPage()[0];
+    const largeItem = $("#largeiteminfo_item_actions");
+
+    const graph = $("#pricehistory");
+    const graphControls = graph.siblings(".pricehistory_zoom_controls");
+    const listingSearch = $("#listings").find(".market_listing_filter");
+
+    const listing = $($("#listing_"+id));
+    const floatContainer = listing.find("span.market_listing_item_float");
+    const listingPrice = listing.find("span.market_listing_price_with_fee");
+    const smallBuyButton = listing.find("a.item_market_action_button");
+    const bigBuyButton = generateButton("buy_found_listing", "Buy now");
+
+    graph.remove();
+    graphControls.remove();
+    listingSearch.remove();
+    largeItem.find("a").attr("href", inspectLink);
+    bigBuyButton.find("a").attr("href", smallBuyButton.attr("href"));
+    bigBuyButton.css("float", "");
+    largeItem.append(bigBuyButton);
+
+    const price = "Price: "+listingPrice.text();
+    const float = floatContainer[0].outerHTML;
+
+    //Load descriptors and nametag
+    fetchGlobals(function(e)
+    {
+        let assets = getDescriptorsAndFrauds(e.detail, id);
+
+        let exteriorDescriptorIndex;
+        const descriptors = assets.descriptors;
+        for(let i = 0; i < descriptors.length; i ++)
+        {
+            const descriptor = descriptors[i];
+            if(descriptor.value.match(/(exterior|zewnętrze)/i) !== null)
+            {
+                exteriorDescriptorIndex = i;
+                descriptor.value += " "+float;
+            }
+        }
+
+        descriptors.splice(exteriorDescriptorIndex+1, 0, {type: "html", value: price});
+        descriptors.splice(exteriorDescriptorIndex+1, 0, EMPTY_DESCRIPTOR);
+
+        appendDescriptors(descriptors, true);
+        appendFraudWarnings(assets.frauds, true);
+    });
 }
 function ajaxCall(url, type)
 {

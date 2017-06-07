@@ -116,6 +116,85 @@ function byteCount(s)
 {
     return s.length * 2;
 }
+function decodeHtml(html)
+{
+    const txt = document.createElement("textarea");
+    txt.innerHTML = html;
+    return txt.value;
+}
+
+//credit: https://stackoverflow.com/a/9636008/4061413
+function fetchGlobals(listener)
+{
+
+    let s = document.createElement('script');
+    //noinspection JSUnresolvedVariable,JSUnresolvedFunction
+    s.src = chrome.extension.getURL('/js/fetchGlobals.js');
+    (document.head || document.documentElement).appendChild(s);
+    s.onload = function()
+    {
+        s.remove();
+    };
+
+    // Event listener
+    document.addEventListener('FloatScanner_getGlobals', listener);
+
+}
+
+function getDescriptorsAndFrauds(detail, id)
+{
+    let assetId = detail.listings[id].asset.id;
+    let asset = detail.assets[730][2][assetId];
+    //noinspection JSUnresolvedVariable
+    return {descriptors: asset.descriptions, frauds: asset.fraudwarnings};
+}
+
+function appendDescriptors(descriptors, clearPrevious = false)
+{
+    const parent = $("#largeiteminfo_item_descriptors");
+    if(clearPrevious)
+        parent.find(".descriptor").remove();
+
+    if(descriptors === undefined || descriptors === null)
+        return;
+
+    for(let i = 0; i < descriptors.length; i ++)
+    {
+        const descriptor = descriptors[i];
+        if(descriptor.type !== "html")
+            continue;
+
+        let element;
+        if(descriptor.value.length === 1 && descriptor.value.charCodeAt(0) === 32)
+            element = $("<div>", {class: "descriptor", html: decodeHtml("&nbsp;")});
+        else
+            element = $("<div>", {class: "descriptor", html: descriptor.value});
+        if(descriptor.hasOwnProperty("color"))
+            element.css("color", descriptor.color);
+
+        parent.append(element);
+    }
+}
+
+function appendFraudWarnings(frauds, clearPrevious = false)
+{
+    const parent = $("#largeiteminfo_fraud_warnings");
+    parent.css("display", "");
+    if(clearPrevious)
+        parent.find(".fraud_warning_box").remove();
+
+    if(frauds === undefined || frauds === null)
+        return;
+
+    for(let i = 0; i < frauds.length; i ++)
+    {
+        const fraud = frauds[i];
+        let template = FRAUD_WARNING_TEMPLATE;
+        template = template.replace("%text%", fraud);
+        parent.append($.parseHTML(template));
+    }
+}
+
 //Constants
 const SVG_ICON_CLEAR = "<svg xmlns=\"http://www.w3.org/2000/svg\" fill=\"#000000\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\">"+
     "<path d=\"M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z\"/>"+
@@ -281,6 +360,15 @@ const ID_FILTER_SESSION = "filter_session";
 const TYPE_NOTIFY = "TYPE_NOTIFY";
 const TYPE_UPDATE_SETTINGS = "TYPE_UPDATE_SETTINGS";
 const TYPE_CLEAR_CACHE = "TYPE_CLEAR_CACHE";
+
+const EMPTY_DESCRIPTOR = {type: "html", value: decodeHtml("&nbsp;")};
+
+const FRAUD_WARNING_TEMPLATE =
+    "<div class=\"fraud_warning_box\">"+
+    "    <img class=\"fraud_warning_image\" src=\"https://steamcommunity-a.akamaihd.net/public/images/sharedfiles/icons/icon_warning.png\">"+
+    "    <span>%text%</span>"+
+    "</div>";
+
 const IMG_TEMPLATE = "<img id=\"listing_%id%_image\" src=\"%icon_url%\" srcset=\"%icon_url%/62fx62f 1x, %icon_url%/62fx62fdpx2x 2x\" "+
     "style=\"border-color: #D2D2D2;\" class=\"market_listing_item_img economy_item_hoverable\" alt=\"\">";
 
