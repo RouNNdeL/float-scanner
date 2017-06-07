@@ -257,7 +257,7 @@ const DEFAULT_SETTINGS = {
     float_places: 3,
     request_delay: 5000,
     search_threshold: 5, /*Value for price overdue in percentage before canceling search */
-    search_precaution: 100, /*How many results to display and then filtter while searching for a listing. Max: 100 (Steam limitations)*/
+    search_precaution: 100, /*How many results to display and then filter while searching for a listing. Max: 100 (Steam limitations)*/
     date_format: "H:MM, m/d/yy",
     row_background: "#16202D",
     example_font: "Arial, Helvetica, Verdana, sans-serif"
@@ -281,7 +281,8 @@ const ID_FILTER_SESSION = "filter_session";
 const TYPE_NOTIFY = "TYPE_NOTIFY";
 const TYPE_UPDATE_SETTINGS = "TYPE_UPDATE_SETTINGS";
 const TYPE_CLEAR_CACHE = "TYPE_CLEAR_CACHE";
-const IMG_TEMPLATE = "<img id=\"listing_%id%_image\" src=\"%icon_url%\" srcset=\"%icon_url%/62fx62f 1x, %icon_url%/62fx62fdpx2x 2x\" style=\"border-color: #D2D2D2;\" class=\"market_listing_item_img economy_item_hoverable\" alt=\"\">";
+const IMG_TEMPLATE = "<img id=\"listing_%id%_image\" src=\"%icon_url%\" srcset=\"%icon_url%/62fx62f 1x, %icon_url%/62fx62fdpx2x 2x\" "+
+    "style=\"border-color: #D2D2D2;\" class=\"market_listing_item_img economy_item_hoverable\" alt=\"\">";
 
 const ACTION_BUTTON_SETUP_FUNCTION =
     "function InstallMarketActionMenuButtons()"+
@@ -310,8 +311,10 @@ const SESSION_CONTAINER_TEMPLATE =
     "		<span class=\"my_market_header_active\">My scanning results</span>"+
     "		<span class=\"my_market_header_count\">(<span id=\"my_market_sessions_number\"></span>)</span>"+
     "	</h3>"+
-    "	    <div class=\"market_listing_table_message\">You don't have any results yet. Navigate to a Counter-Strike: Global Offensive item and click on a \"Scan floats\" button.</div>"+
+    "	    <div class=\"market_listing_table_message\">You don't have any results yet. "+
+    "Navigate to a Counter-Strike: Global Offensive item and click on a \"Scan floats\" button.</div>"+
     "	</div>";
+
 const NO_RESULTS_HEADER =
     "<div class=\"market_listing_table_header\">"+
     "    <div>"+
@@ -327,6 +330,7 @@ const BEST_RESULT_HEADER =
     "        </span>Best result"+
     "    </div>"+
     "</div>";
+
 const DEFAULT_HEADER =
     "<div class=\"market_listing_table_header\">"+
     "	<div class=\"market_listing_price_listings_block\">"+
@@ -336,6 +340,7 @@ const DEFAULT_HEADER =
     "	<span class=\"market_listing_right_cell market_listing_seller\">SELLER</span>"+
     "	<div><span class=\"market_listing_header_namespacer\"></span>NAME</div>"+
     "</div>";
+
 const DEFAULT_HEADER_WITH_FLOAT =
     "<div class=\"market_listing_table_header\">"+
     "	<div class=\"market_listing_price_listings_block\">"+
@@ -346,6 +351,7 @@ const DEFAULT_HEADER_WITH_FLOAT =
     "	<span class=\"market_listing_right_cell market_listing_float\" style=\"width: 150px\">FLOAT</span>"+
     "	<div><span class=\"market_listing_header_namespacer\"></span>NAME</div>"+
     "</div>";
+
 const SESSIONS_HEADER =
     "<div class=\"market_listing_table_header\">"+
     "    <span class=\"market_listing_right_cell market_listing_edit_buttons placeholder market_sortable_column\" id=\"delete_all_sessions\" style=\"width: 160px\">Delete all</span>"+
@@ -354,7 +360,6 @@ const SESSIONS_HEADER =
     "    <span class=\"market_listing_right_cell market_listing_my_price\">Scan date</span>"+
     "    <span><span class=\"market_listing_header_namespacer\"></span>NAME</span>"+
     "</div>";
-
 
 const ROW_TEMPLATE = "<div class=\"market_listing_row market_recent_listing_row listing_%id%\" id=\"listing_%id%\">"+
     "	"+
@@ -424,7 +429,8 @@ const SESSION_ROW_TEMPLATE =
     "		    </span>"+
     "	    </div>"+
     "		<div class=\"market_listing_item_name_block\">"+
-    "		<span class=\"market_listing_item_name\" style=\"color: #D2D2D2;\"><a class=\"market_listing_item_name_link\" href=\"https://steamcommunity.com/market/listings/730/%name%#session_id=%sid%\">%name%</a></span><br>"+
+    "		<span class=\"market_listing_item_name\" style=\"color: #D2D2D2;\"><a class=\"market_listing_item_name_link\""+
+    " href=\"https://steamcommunity.com/market/listings/730/%name%#session_id=%sid%\">%name%</a></span><br>"+
     "		<span class=\"market_listing_game_name\">%game%</span>"+
     "	</div>"+
     "	<div class=\"market_listing_edit_buttons actual_content\"  style=\"width: 160px;\">"+

@@ -68,6 +68,10 @@ function saveNumber(event)
     const target = $(event.target);
     const tmp = $.extend(true, {}, settings);
     const parent = target.closest(".setting");
+    if(target.val() < 0)
+        target.val(0);
+    if(target.val() > 100)
+        target.val(100);
     tmp.qualities[parent.attr("id")].limit = target.val();
     setOptions(tmp, {notify: true, overwrite: false, reload: false});
 }
