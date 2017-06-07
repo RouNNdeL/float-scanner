@@ -380,7 +380,7 @@ function fillImgTemplate(data)
             continue;
         if(k == "icon_url")
         {
-            s = s.replaceAll("%"+k+"%", ICON_URL+data[k].replace(/http:\/\//, "https://"));
+            s = s.replaceAll("%"+k+"%", ICON_URL+data[k].replace(/http:\/\//g, "https://"));
         }
         else
         {
@@ -857,7 +857,16 @@ function fillTemplate(obj, sett, tier, global_info, id)
     for(let k in global_info)
     {
         if(global_info.hasOwnProperty(k))
-            s = s.replaceAll("%"+k+"%", global_info[k]);
+        {
+            if(k === "img")
+            {
+                s = s.replaceAll("%"+k+"%", global_info[k].replace(/http:\/\//g, "https://"));
+            }
+            else
+            {
+                s = s.replaceAll("%"+k+"%", global_info[k]);
+            }
+        }
     }
     s = s.replaceAll("%id%", id);
     s = s.replaceAll("%info%", info);

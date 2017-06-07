@@ -408,6 +408,7 @@ const ROW_TEMPLATE = "<div class=\"market_listing_row market_recent_listing_row 
     "	    </div>"+
     "	<div style=\"clear: both;\"></div>"+
     "</div>";
+
 const SESSION_ROW_TEMPLATE =
     "<div class=\"market_listing_row market_recent_listing_row\" id=\"sessioon_%sid%\">"+
     "		%img%"+
