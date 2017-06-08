@@ -470,7 +470,7 @@ const ROW_TEMPLATE = "<div class=\"market_listing_row market_recent_listing_row 
     "	"+
     "	<div class=\"market_listing_item_img_container\">"+
     "		%img%"+
-    "       <a id=\"listing_%id%_actionmenu_button\" class=\"market_actionmenu_button\" href=\"javascript:void(0)\">"+
+    //"       <a id=\"listing_%id%_actionmenu_button\" class=\"market_actionmenu_button\" href=\"javascript:void(0)\">"+
     "       </a>"+
     "   </div>"+
     "		<div class=\"market_listing_price_listings_block\">"+
