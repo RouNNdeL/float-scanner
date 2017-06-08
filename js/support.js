@@ -359,6 +359,12 @@ const EXTERIOR_LIMITS = {
     "Well-Worn": [0.38, 0.45],
     "Battle-Scarred": [0.45, 1]
 };
+const SORT_PRICE_LOW = {id: 0, name: "Lowest price"};
+const SORT_PRICE_HIGH = {id: 1, name: "Highest price"};
+const SORT_QUALITY_LOW = {id: 2, name: "Worst quality"};
+const SORT_QUALITY_HIGH = {id: 3, name: "Best quality"};
+const SORT_MODES = [SORT_PRICE_LOW, SORT_QUALITY_HIGH, SORT_PRICE_HIGH, SORT_QUALITY_LOW];
+
 const AVATAR_URL = "https://cdn.edgecast.steamstatic.com/steamcommunity/public/images/avatars";
 const AVATAR_SHORT = "!%#";
 const STORAGE_SETTINGS = "settings";

@@ -644,12 +644,12 @@ async function page(n, maxTries = 60)
     }
     return true;
 }
-function showResults(session, sett, filter, overtwrie = true)
+async function showResults(session, sett, filter = null, sortingMode = SORT_MODES[0].id, overwrite = true)
 {
-    if(! filter)
+    if(filter === null)
         filter = sett.filter_by;
 
-    if(overtwrie)
+    if(overwrite)
         sett = getSettings();
 
     const old_select = $("#quality_select");
@@ -659,9 +659,11 @@ function showResults(session, sett, filter, overtwrie = true)
     const con = $("#searchResultsRows");
     const for_removal = $(".market_listing_row").not("#market_buyorder_info").add("#best_header");
     const display = [];
-    const select = setupSelect(sett, filter);
+    const qualitySelect = setupQualitySelect(sett, filter);
+    const sortSelect = setupSortingSelect(sortingMode);
     for_removal.remove();
     const filtered_results = filterRows(session, sett, filter);
+    filtered_results.results = sortRows(filtered_results.results, sortingMode);
     for(let k in filtered_results.results)
     {
         if(! filtered_results.results.hasOwnProperty(k))
@@ -723,25 +725,37 @@ function showResults(session, sett, filter, overtwrie = true)
         else
             con.append(row);
     }
-    $(".market_listing_table_header").find("div").eq(0).append(select);
-    select.change(function(e)
+
+    $(".market_listing_table_header").find("div").eq(0).append(qualitySelect);
+    $(".market_listing_table_header").find("div").eq(0).append(sortSelect);
+
+    qualitySelect.change(function(e)
     {
-        const target = $(e.target);
-        showResults(session, sett, target.val());
+        showResults(session, sett, $(e.target).val(), sortingMode);
+    });
+    sortSelect.change(function(e)
+    {
+        showResults(session, sett, filter, parseInt($(e.target).val()));
     });
 }
-function setupSelect(sett, filter)
+
+function setupQualitySelect(sett, filter)
 {
     if(filter == null || filter == undefined)
         filter = sett.filter_by;
     $("#quality_select").remove();
     const qualities = sett.qualities;
+    const span = $("<span>", {
+        text: "Min. quality: ",
+        css: {
+            "float": "right",
+            "padding-right": "10px",
+            "padding-left": "10px",
+        }
+    });
     const select = $("<select>", {
         id: "quality_select",
         css: {
-
-            "float": "right",
-            "padding-right": "10px",
             "margin-top": "0.25rem",
             "outline": "none"
         }
@@ -758,8 +772,43 @@ function setupSelect(sett, filter)
             opt.prop("selected", true);
         select.append(opt);
     }
-    return select;
+    span.append(select);
+    return span;
 }
+
+function setupSortingSelect(selected)
+{
+    $("#sorting_select").remove();
+    const span = $("<span>", {
+        text: "Sort by: ",
+        css: {
+            "float": "right",
+            "padding-right": "10px",
+            "padding-left": "10px",
+        }
+    });
+    const select = $("<select>", {
+        id: "sorting_select",
+        css: {
+            "margin-top": "0.25rem",
+            "outline": "none"
+        }
+    });
+    for(let i = 0; i < SORT_MODES.length; i ++)
+    {
+
+        const opt = $("<option>", {
+            value: SORT_MODES[i].id,
+            text: SORT_MODES[i].name
+        });
+        if(SORT_MODES[i].id === selected)
+            opt.prop("selected", true);
+        select.append(opt);
+    }
+    span.append(select);
+    return span;
+}
+
 function showSessionsOnMain(ses, sett)
 {
     const container = $("#tabContentsMyListings");
@@ -889,6 +938,94 @@ function extractParams(s)
     obj.game = html.find(".market_listing_game_name").text().replace(/[\t\n]/gm, "");
 
     return obj;
+}
+
+function sortRows(rows, sortingMode)
+{
+    //Credit: https://stackoverflow.com/a/1069840/4061413
+    if(sortingMode === SORT_PRICE_LOW.id)
+    {
+        const sortable = [];
+        for(let k in rows)
+        {
+            if(! rows.hasOwnProperty(k))
+                continue;
+            sortable.push([k, rows[k], rows[k].price_with_fee]);
+        }
+        sortable.sort(function(a, b)
+        {
+            return a[2].replace(/[^\d,.]/g, "").replace(/,/g, ".")-
+                b[2].replace(/[^\d,.]/g, "").replace(/,/g, ".");
+        });
+        const newRows = {};
+        for(let i = 0; i < sortable.length; i ++)
+        {
+            newRows[sortable[i][0]] = (sortable[i][1]);
+        }
+        return newRows;
+    }
+    else if(sortingMode === SORT_PRICE_HIGH.id)
+    {
+        const sortable = [];
+        for(let k in rows)
+        {
+            if(! rows.hasOwnProperty(k))
+                continue;
+            sortable.push([k, rows[k], rows[k].price_with_fee]);
+        }
+        sortable.sort(function(a, b)
+        {
+            return b[2].replace(/[^\d,.]/g, "").replace(/,/g, ".")-
+                a[2].replace(/[^\d,.]/g, "").replace(/,/g, ".");
+        });
+        const newRows = {};
+        for(let i = 0; i < sortable.length; i ++)
+        {
+            newRows[sortable[i][0]] = (sortable[i][1]);
+        }
+        return newRows;
+    }
+    else if(sortingMode === SORT_QUALITY_HIGH.id)
+    {
+        const sortable = [];
+        for(let k in rows)
+        {
+            if(! rows.hasOwnProperty(k))
+                continue;
+            sortable.push([k, rows[k], rows[k].float]);
+        }
+        sortable.sort(function(a, b)
+        {
+            return a[2]-b[2];
+        });
+        const newRows = {};
+        for(let i = 0; i < sortable.length; i ++)
+        {
+            newRows[sortable[i][0]] = (sortable[i][1]);
+        }
+        return newRows;
+    }
+    else if(sortingMode === SORT_QUALITY_LOW.id)
+    {
+        const sortable = [];
+        for(let k in rows)
+        {
+            if(! rows.hasOwnProperty(k))
+                continue;
+            sortable.push([k, rows[k], rows[k].float]);
+        }
+        sortable.sort(function(a, b)
+        {
+            return b[2]-a[2];
+        });
+        const newRows = {};
+        for(let i = 0; i < sortable.length; i ++)
+        {
+            newRows[sortable[i][0]] = (sortable[i][1]);
+        }
+        return newRows;
+    }
+    return rows;
 }
 function filterRows(obj, settings, filter)
 {
