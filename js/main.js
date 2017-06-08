@@ -694,28 +694,7 @@ async function showResults(session, sett, filter = null, sortingMode = SORT_MODE
         {
             continue;
         }
-        row.find(".market_listing_buy_button span").text("Find to buy");
-        row.find(".market_listing_buy_button a").click(function(event)
-        {
-            const id = $(event.target).closest(".market_listing_row").attr("id").replace(/[^\d]/g, "");
-            const row = $("#listing_"+id);
-            if(row.length != 1)
-                return 0;
-            const session_match = window.location.hash.match(/session_id=([\da-z]+)/);
-            const session_before = session_match == null ? null : parseInt(session_match[1]);
-            const price = row.find(".market_listing_price_with_fee").text().replace(/[\s\t\n]/gm, "");
-            const name = row.find(".market_listing_item_name").text().replace(/[\n]/gm, "");
-            const info = {
-                id: id,
-                name: name,
-                price: price,
-                session_before: session_before,
-                currency: session.info.currency
-            };
-            window.location.href = "#search="+encodeURI(JSON.stringify(info));
-        });
-        row.find(".market_listing_buy_button a").removeAttr("href");
-        row.find(".market_actionmenu_button").attr("href", filtered_results.results[k].url);
+        row.find(".market_listing_buy_button span").text("Find original");
         if(filtered_results.results[k].float == filtered_results.best.float)
         {
             //row.css("background-color", "rgba(38, 63, 149, 0.72)");
@@ -725,18 +704,37 @@ async function showResults(session, sett, filter = null, sortingMode = SORT_MODE
         else
             con.append(row);
     }
+    $(".market_listing_buy_button a").each(function()
+    {
+        const id = $(this).closest(".market_listing_row").attr("id").replace(/[^\d]/g, "");
+        $(this).attr("href", getSearchUrl(id));
+    });
 
     $(".market_listing_table_header").find("div").eq(0).append(qualitySelect);
     $(".market_listing_table_header").find("div").eq(0).append(sortSelect);
 
     qualitySelect.change(function(e)
     {
+        //noinspection JSIgnoredPromiseFromCall
         showResults(session, sett, $(e.target).val(), sortingMode);
     });
     sortSelect.change(function(e)
     {
+        //noinspection JSIgnoredPromiseFromCall
         showResults(session, sett, filter, parseInt($(e.target).val()));
     });
+}
+
+function getSearchUrl(id)
+{
+    const sessionMatch = window.location.hash.match(/session_id=([\da-z]+)/);
+    const sessionId = sessionMatch == null ? null : sessionMatch[1];
+    const session = getSessions()[sessionId];
+    const info = {
+        id: id,
+        session_id: sessionId,
+    };
+    return "#search="+encodeURI(JSON.stringify(info));
 }
 
 function setupQualitySelect(sett, filter)
@@ -1149,13 +1147,14 @@ async function findListingNew(info)
 {
     const sett = getSettings();
     const params = $.parseJSON(decodeURI(info));
-    const session_before = params.session_before;
-    const id = params.id;
-    const name = params.name;
-    const currency = params.currency;
-    const price_as_string = params.price;
-    const price = parseFloat(price_as_string.replace(/[^\d,.]/gm, "").replace(/,/, "."));
-    if(id == undefined || id == null || name == undefined || name == null || price == undefined || price == null)
+    const sessionId = params.session_id;
+    const listingId = params.id;
+    const session = getSessions()[sessionId];
+    const name = session.info.name;
+    const priceAsString = session.results[listingId].price_with_fee;
+    const currency = session.info.currency;
+    const price = parseFloat(priceAsString.replace(/[^\d,.]/gm, "").replace(/,/, "."));
+    if(listingId == undefined || listingId == null || name == undefined || name == null || price == undefined || price == null)
         return 0;
 
     const progress = new LoadingOverlayProgress(OVERLAY_PROGRESS_SETTINGS);
@@ -1174,7 +1173,7 @@ async function findListingNew(info)
         custom: progress.init()
     });
     progress.updateText3("Searching for \""+name+"\"");
-    progress.updateText2("Target price: "+price_as_string);
+    progress.updateText2("Target price: "+priceAsString);
     let current_price = 0;
     let current_price_as_string = "0";
     let start = 0;
@@ -1220,7 +1219,7 @@ async function findListingNew(info)
             progress.updateText1("Current price: "+current_price_as_string);
 
         current_price = isNaN(current_price) ? 0 : current_price;
-        const target = $("#listing_"+id, tempDom);
+        const target = $("#listing_"+listingId, tempDom);
         const rows = $(".market_listing_row", tempDom);
         const index = rows.index(target);
         if(index > - 1 && con)
@@ -1230,7 +1229,7 @@ async function findListingNew(info)
                 +"&start="+Math.max((page * 100+index-Math.floor(Math.min(sett.search_precaution, max_count) / 2)), 0)
                 +"&language="+sett.lang
                 +"&currency="+sett.currency
-                +"#filter="+id;
+                +"#filter="+listingId;
             found = true;
             progress.updateText1("Listing found");
             progress.updateText2("Redirecting...");
@@ -1246,18 +1245,18 @@ async function findListingNew(info)
         const remove = confirm("Listing not found, it's probably been sold already.\nDo you want to remove this item from the session?");
         if(remove)
         {
-            removeItemFromSession(getSessions(), session_before, id);
+            removeItemFromSession(getSessions(), sessionId, listingId);
             saveSessions();
         }
-        if(session_before !== null)
-            window.location.replace("#session_id="+session_before);
+        if(sessionId !== null)
+            window.location.replace("#session_id="+sessionId);
     }
     else if(! found)
     {
         scanning = false;
         $.LoadingOverlay("hide");
-        if(session_before !== null)
-            window.location.replace("#session_id="+session_before);
+        if(sessionId !== null)
+            window.location.replace("#session_id="+sessionId);
     }
 
     con = false;
