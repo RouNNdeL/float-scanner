@@ -15,7 +15,7 @@
 "use strict";
 String.prototype.capitalize = function()
 {
-    return this.charAt(0).toUpperCase()+this.slice(1);
+    return this.charAt(0).toUpperCase() + this.slice(1);
 };
 Array.prototype.prepend = function(value)
 {
@@ -35,7 +35,7 @@ function editName(event)
     const parent = target.closest(".setting");
     const id = parent.attr("id");
     const input = $("<input>", {
-        id: "edit-"+id,
+        id: "edit-" + id,
         type: "text",
         value: target.text(),
         class: "black-text edit card-title"
@@ -50,6 +50,7 @@ function editName(event)
             saveName(event);
     });
 }
+
 function saveName(event)
 {
     const target = $(event.target);
@@ -63,6 +64,7 @@ function saveName(event)
     target.remove();
     setOptions(tmp, {notify: true, overwrite: false, reload: true});
 }
+
 function saveNumber(event)
 {
     const target = $(event.target);
@@ -75,6 +77,7 @@ function saveNumber(event)
     tmp.qualities[parent.attr("id")].limit = target.val();
     setOptions(tmp, {notify: true, overwrite: false, reload: false});
 }
+
 function saveColor(event)
 {
     const target = $(event.target);
@@ -84,6 +87,7 @@ function saveColor(event)
     tmp.qualities[parent.attr("id")].css.color = target.val();
     setOptions(tmp, {notify: true, overwrite: false, reload: false});
 }
+
 function saveSize(event)
 {
     const target = $(event.target);
@@ -95,11 +99,12 @@ function saveSize(event)
         size = 24;
     else if(size < 8)
         size = 8;
-    $("#"+id+"-example").css("font-size", size+"px");
-    target.val(size+'px');
-    tmp.qualities[id].css["font-size"] = size+'px';
+    $("#" + id + "-example").css("font-size", size + "px");
+    target.val(size + 'px');
+    tmp.qualities[id].css["font-size"] = size + 'px';
     setOptions(tmp, {notify: true, overwrite: false, reload: false});
 }
+
 function saveWeight(event)
 {
     const target = $(event.target);
@@ -109,6 +114,7 @@ function saveWeight(event)
     tmp.qualities[parent.attr("id")].css["font-weight"] = target.val();
     setOptions(tmp, {notify: true, overwrite: false, reload: false});
 }
+
 function saveFormat(event)
 {
     const target = $(event.target);
@@ -118,6 +124,7 @@ function saveFormat(event)
     tmp.qualities[id].format = target.val();
     setOptions(tmp, {notify: true, overwrite: false, reload: true});
 }
+
 function saveFilter(event)
 {
     const target = $(event.target);
@@ -128,6 +135,7 @@ function saveFilter(event)
     tmp.filter_by = id;
     setOptions(tmp, {notify: true, overwrite: false, reload: false});
 }
+
 function saveSessionThreshold(event)
 {
     const target = $(event.target);
@@ -138,6 +146,7 @@ function saveSessionThreshold(event)
     tmp.session_threshold = id;
     setOptions(tmp, {notify: true, overwrite: false, reload: false});
 }
+
 function saveDelay(event)
 {
     const target = $(event.target);
@@ -150,6 +159,7 @@ function saveDelay(event)
     tmp.request_delay = new_val;
     setOptions(tmp, {notify: true, overwrite: false, reload: false});
 }
+
 function saveCurrency(event)
 {
     const target = $(event.target);
@@ -157,10 +167,12 @@ function saveCurrency(event)
     tmp.currency = target.val();
     setOptions(tmp, {notify: true, overwrite: false, reload: false});
 }
+
 function resetToDefaults(event)
 {
     setOptions(DEFAULT_SETTINGS, {notify: true, overwrite: true, reload: true});
 }
+
 function delRule(event)
 {
     const target = $(event.target);
@@ -169,18 +181,20 @@ function delRule(event)
     delete tmp.qualities[parent.attr("id")];
     setOptions(tmp, {notify: true, overwrite: true, reload: true});
 }
+
 function addRule(event)
 {
     const tmp = $.extend(true, {}, settings);
     tmp.qualities.push(settings.defaults);
-    setOptions(tmp, {notify: true, reload: true, overwrite: true, scroll_to: settings.qualities.length-1})
+    setOptions(tmp, {notify: true, reload: true, overwrite: true, scroll_to: settings.qualities.length - 1})
 }
+
 function clearCache(event)
 {
     let disp = false;
     notifyClearCache(function(resp)
     {
-        if(! disp)
+        if(!disp)
         {
             disp = true;
             if(resp)
@@ -212,15 +226,16 @@ function setupCurrencySelect(currencies, select)
 {
     for(let k in currencies)
     {
-        if(! currencies.hasOwnProperty(k) || ! currencies[k].hasOwnProperty("name") || ! currencies[k].hasOwnProperty("symbol"))
+        if(!currencies.hasOwnProperty(k) || !currencies[k].hasOwnProperty("name") || !currencies[k].hasOwnProperty("symbol"))
             continue;
         const option = $("<option>", {
             value: k,
-            text: currencies[k].name+" ("+currencies[k].symbol+")"
+            text: currencies[k].name + " (" + currencies[k].symbol + ")"
         });
         select.append(option);
     }
 }
+
 function loadHTML(sett, scroll = null)
 {
     const bound = $(".bound");
@@ -231,7 +246,7 @@ function loadHTML(sett, scroll = null)
     bound.off();
     bound.removeClass("bound");
 
-    for(let i = 0; i < qualities.length; i ++)
+    for(let i = 0; i < qualities.length; i++)
     {
         if(qualities[i] == null || qualities[i] == undefined)
             continue;
@@ -247,10 +262,10 @@ function loadHTML(sett, scroll = null)
         const setting = $.parseHTML(generateSetting(name, limit, color, size, weight, format, id));
 
         con.append(setting);
-        const select = $("#"+id+"-weight");
-        const example = $("#"+id+"-example");
-        $("#"+id+"-filter").prop("checked", id == filter);
-        $("#"+id+"-session_threshold").prop("checked", id == session_threshold);
+        const select = $("#" + id + "-weight");
+        const example = $("#" + id + "-example");
+        $("#" + id + "-filter").prop("checked", id == filter);
+        $("#" + id + "-session_threshold").prop("checked", id == session_threshold);
         select.val(weight);
         select.material_select();
         example.text(formatInfo(sett, id, Math.random(), Math.round(Math.random() * 100)));
@@ -264,7 +279,7 @@ function loadHTML(sett, scroll = null)
     $(window).scroll(function()
     {
         const outer = parseInt($("#globals-container").closest(".holder").position().top);
-        $("#globals-container").css("top", - $(window).scrollTop()+outer);
+        $("#globals-container").css("top", -$(window).scrollTop() + outer);
     });
 
     const title = $("div.card-title");
@@ -287,7 +302,7 @@ function loadHTML(sett, scroll = null)
     setupCurrencySelect(CURRENCIES, currency);
     currency.val(sett.currency);
     currency.material_select();
-    clear.text("Clear listing cache ("+Math.floor((sett.cache_size / 1024) * 100) / 100+"kb)");
+    clear.text("Clear listing cache (" + Math.floor((sett.cache_size / 1024) * 100) / 100 + "kb)");
 
     title.on("dblclick", editName).addClass("bound");
     limit.change(saveNumber).addClass("bound");
@@ -311,51 +326,51 @@ function loadHTML(sett, scroll = null)
  }*/
 function generateSetting(name, value, color, size, weight, format, id)
 {
-    return "<div class=\"row small-margin setting\" id=\""+id+"\" style=\"margin: 5px;\">"+
-        "    <div class=\"card\">"+
-        "        <div class=\"card-content white-text\">"+
-        "            <input type=\"radio\" class=\"filter\" id=\""+id+"-filter\">"+
-        "            <label for=\""+id+"-filter\">Default filter</label>"+
-        "            <input type=\"radio\" class=\"session_threshold\" id=\""+id+"-session_threshold\">"+
-        "            <label for=\""+id+"-session_threshold\">Include in sessions</label>"+
-        "            <div class=\"row small-margin\">"+
-        "                <i class=\"material-icons md-dark right delete no-select\" id=\""+id+"-delete\">close</i>"+
-        "                <div class=\"title-container\">"+
-        "                    <div class=\"card-title black-text\">"+name+"</div>"+
-        "                </div>"+
-        "            </div>"+
-        "            <div >"+
-        "                <label for=\""+id+"-percentage\">Minimum value</label>"+
-        "                <input class=\"small-margin black-text limit\" type=\"number\" id=\""+id+"-percentage\" min=\"0\" max=\"100\" value=\""+value+"\">"+
-        "            </div>"+
-        "            <div  class=\"row\">"+
-        "                <label for=\""+id+"-color\">Color</label>"+
-        "                <input type=\"color\" id=\""+id+"-color\" value=\""+color+"\">"+
-        "            </div>"+
-        "            <div>"+
-        "                <label for=\""+id+"-size\">Font size</label>"+
-        "                <input class=\"small-margin black-text size\" type=\"text\" id=\""+id+"-size\" value=\""+size+"\">"+
-        "            </div>"+
-        "            <div>"+
-        "                <label for=\""+id+"-weight\">Font style</label>"+
-        "                <select class=\"black-text weight\" id=\""+id+"-weight\">"+
-        "                    <option value=\"lighter\">Lighter</option>"+
-        "                    <option value=\"normal\" selected>Normal</option>"+
-        "                    <option value=\"bold\">Bold</option>"+
-        "                </select>"+
-        "            </div>"+
-        "            <div>"+
-        "                <label for=\""+id+"-fomat\">Format</label>"+
-        "                <input class=\"small-margin black-text format\" type=\"text\" id=\""+id+"-format\" value=\""+format+"\">"+
-        "            </div>"+
-        "            <div class=\"row\">"+
-        "                <label for=\""+id+"-example\">Preview:</label>"+
-        "                <div class=\"example-container\" style=\"margin-top: 4px; background-color: "+settings.row_background+";\">"+
-        "                    <p id=\""+id+"-example\" style=\"font-size: "+size+"; font-weight: "+weight+"; color: "+color+";\" class=\"example\">0.12345 (56%)</p>"+
-        "                </div>"+
-        "            </div>"+
-        "        </div>"+
-        "    </div>"+
+    return "<div class=\"row small-margin setting\" id=\"" + id + "\" style=\"margin: 5px;\">" +
+        "    <div class=\"card\">" +
+        "        <div class=\"card-content white-text\">" +
+        "            <input type=\"radio\" class=\"filter\" id=\"" + id + "-filter\">" +
+        "            <label for=\"" + id + "-filter\">Default filter</label>" +
+        "            <input type=\"radio\" class=\"session_threshold\" id=\"" + id + "-session_threshold\">" +
+        "            <label for=\"" + id + "-session_threshold\">Include in sessions</label>" +
+        "            <div class=\"row small-margin\">" +
+        "                <i class=\"material-icons md-dark right delete no-select\" id=\"" + id + "-delete\">close</i>" +
+        "                <div class=\"title-container\">" +
+        "                    <div class=\"card-title black-text\">" + name + "</div>" +
+        "                </div>" +
+        "            </div>" +
+        "            <div >" +
+        "                <label for=\"" + id + "-percentage\">Minimum value</label>" +
+        "                <input class=\"small-margin black-text limit\" type=\"number\" id=\"" + id + "-percentage\" min=\"0\" max=\"100\" value=\"" + value + "\">" +
+        "            </div>" +
+        "            <div  class=\"row\">" +
+        "                <label for=\"" + id + "-color\">Color</label>" +
+        "                <input type=\"color\" id=\"" + id + "-color\" value=\"" + color + "\">" +
+        "            </div>" +
+        "            <div>" +
+        "                <label for=\"" + id + "-size\">Font size</label>" +
+        "                <input class=\"small-margin black-text size\" type=\"text\" id=\"" + id + "-size\" value=\"" + size + "\">" +
+        "            </div>" +
+        "            <div>" +
+        "                <label for=\"" + id + "-weight\">Font style</label>" +
+        "                <select class=\"black-text weight\" id=\"" + id + "-weight\">" +
+        "                    <option value=\"lighter\">Lighter</option>" +
+        "                    <option value=\"normal\" selected>Normal</option>" +
+        "                    <option value=\"bold\">Bold</option>" +
+        "                </select>" +
+        "            </div>" +
+        "            <div>" +
+        "                <label for=\"" + id + "-fomat\">Format</label>" +
+        "                <input class=\"small-margin black-text format\" type=\"text\" id=\"" + id + "-format\" value=\"" + format + "\">" +
+        "            </div>" +
+        "            <div class=\"row\">" +
+        "                <label for=\"" + id + "-example\">Preview:</label>" +
+        "                <div class=\"example-container\" style=\"margin-top: 4px; background-color: " + settings.row_background + ";\">" +
+        "                    <p id=\"" + id + "-example\" style=\"font-size: " + size + "; font-weight: " + weight + "; color: " + color + ";\" class=\"example\">0.12345 (56%)</p>" +
+        "                </div>" +
+        "            </div>" +
+        "        </div>" +
+        "    </div>" +
         "</div>";
 }
 
@@ -392,7 +407,7 @@ function setOptions(set, options = {})
 
     while((settings.qualities[settings.filter_by] == null || settings.qualities[settings.filter_by] == undefined) && settings.qualities.length > 1)
     {
-        settings.filter_by = Math.abs(settings.filter_by-1);
+        settings.filter_by = Math.abs(settings.filter_by - 1);
     }
 
     if(savingSettings.reload)
@@ -407,15 +422,17 @@ function setOptions(set, options = {})
     else if(savingSettings.notify)
         notifyUpdate();
 }
+
 function getSettings()
 {
     return settings;
 }
+
 function notifyUpdate(callback)
 {
     chrome.tabs.query({}, function(tabs)
     {
-        for(let i = 0; i < tabs.length; ++ i)
+        for(let i = 0; i < tabs.length; ++i)
         {
             if(tabs[i].url == undefined || tabs[i].url == null || tabs[i].url.match(/steamcommunity\.com\/market/).length <= 0)
                 continue;
@@ -423,11 +440,12 @@ function notifyUpdate(callback)
         }
     });
 }
+
 function notifyClearCache(callback)
 {
     chrome.tabs.query({}, function(tabs)
     {
-        for(let i = 0; i < tabs.length; ++ i)
+        for(let i = 0; i < tabs.length; ++i)
         {
             if(tabs[i].url == undefined || tabs[i].url == null || tabs[i].url.match(/steamcommunity\.com\/market/).length <= 0)
                 continue;
@@ -435,12 +453,14 @@ function notifyClearCache(callback)
         }
     });
 }
+
 function saveOptions(settings, callback)
 {
     const obj = {};
     obj[STORAGE_SETTINGS] = settings;
     chrome.storage.sync.set(obj, callback);
 }
+
 function loadOptions()
 {
     chrome.storage.sync.get(STORAGE_SETTINGS, setOptions);

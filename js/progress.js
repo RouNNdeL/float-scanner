@@ -100,7 +100,7 @@ const LoadingOverlayProgress = function(options)
     {
         if(percentage < 0) percentage = 0;
         if(percentage > 100) percentage = 100;
-        const r = {"right": (100-percentage)+"%"};
+        const r = {"right": (100 - percentage) + "%"};
         _bar.css(r);
         _text.css(r);
         _text.text(text);
@@ -121,6 +121,7 @@ const LoadingOverlayProgress = function(options)
     {
         _third.text(value);
     }
+
     function getProgress()
     {
         return _progress;

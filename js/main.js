@@ -12,6 +12,7 @@ let con = true;
 let scanning = false;
 let searching = false;
 let all_listings;
+
 $(function()
 {
     limits = getExterior(window.location.href, EXTERIOR_LIMITS);
@@ -22,11 +23,13 @@ $(function()
     setListings();
     //clearListingsOlderThen(7);
 
+    //noinspection JSUnresolvedVariable
     chrome.runtime.onMessage.addListener(onMessageListener);
 
     setup("#market_buyorder_info", buttons);
     //setupCacheInfo(Math.floor(byteCount(LZString.compress(JSON.stringify(getListings()))) * 100 / 1024) / 100);
 });
+
 $(document).keyup(async function(e)
 {
     if(scanning)
@@ -44,16 +47,19 @@ $(document).keyup(async function(e)
             alert("Press ESC to cancel search");
     }
 });
+
 $(window).on("hashchange", function(e)
 {
     hashActions(getSessions());
 });
+
 $(window).on("popstate", handlePopStateEvent);
+
 async function onOptionsLoaded(max_tries = 100)
 {
     let tries = 0;
     const ses = getSessions();
-    while(! ses)
+    while(!ses)
     {
         if(tries > max_tries)
             break;
@@ -63,12 +69,13 @@ async function onOptionsLoaded(max_tries = 100)
     if(window.location.href.match(/steamcommunity.com\/market\/?(?:#.*|$)/))
         showSessionsOnMain(ses, getSettings());
 }
-function handlePopStateEvent(e)
+
+function handlePopStateEvent()
 {
     if(scanning)
         con = false;
-
 }
+
 function hashActions(sess)
 {
     const session_match = window.location.hash.match(/session_id=([\da-z]+)/);
@@ -81,9 +88,9 @@ function hashActions(sess)
         const sid = session_match[1];
         if(sess[sid] !== null && sess[sid] !== undefined)
         {
-            $("#"+ID_ONE_PAGE_SCAN).add("#"+ID_FILTER_SESSION).remove();
+            $("#" + ID_ONE_PAGE_SCAN).add("#" + ID_FILTER_SESSION).remove();
             showResults(sess[sid], getSettings());
-            const before = $("#"+ID_BATCH_SCAN).parent();
+            const before = $("#" + ID_BATCH_SCAN).parent();
             const btn = generateButton(ID_FILTER_SESSION, "Filter session", function()
             {
                 filterSession(sess, sid, getSettings());
@@ -111,8 +118,9 @@ function hashActions(sess)
         betterScan(parseInt(scan_match[1]));
     }
     if(remove_hash)
-        window.history.replaceState({}, document.title, window.location.pathname+window.location.search);
+        window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
 }
+
 function buttons()
 {
     const container = $("#market_buyorder_info").children("*").eq(0);
@@ -130,9 +138,10 @@ function buttons()
     const better_scan_btn = generateButton(ID_BATCH_SCAN, "Scan floats", initializeScan);
     better_scan_btn.insertBefore(before);
 }
+
 function generateButton(id, txt, onclick = null, remove)
 {
-    $("#"+id).remove();
+    $("#" + id).remove();
     const start = $("<div>", {
         css: {
             "float": "right",
@@ -168,17 +177,17 @@ async function generateFloats(raw_json, sett, progress, count, lists, obj)
 
     for(let k in listings)
     {
-        if(! con)
+        if(!con)
             continue;
-        if(! listings.hasOwnProperty(k))
+        if(!listings.hasOwnProperty(k))
             continue;
         const a = listings[k].asset;
         const asset = assets[a.appid][a.contextid][a.id];
-        const link = API_URL+asset.actions[0].link.replace("%assetid%", a.id);
+        const link = API_URL + asset.actions[0].link.replace("%assetid%", a.id);
         try
         {
             const obj = $.extend(true, {}, getInfoFromHtml(raw_json.results_html, k));
-            if(! obj.price_with_fee.match(/\d/))
+            if(!obj.price_with_fee.match(/\d/))
                 continue;
             let r;
             if(lists.hasOwnProperty(k))
@@ -216,7 +225,7 @@ async function generateFloats(raw_json, sett, progress, count, lists, obj)
             const f = info.floatvalue;
             const min = info.item_name && limits[0] < info.min ? info.min : limits[0];
             const max = info.item_name && limits[1] > info.max ? info.max : limits[1];
-            let quality = (max-f) / (max-min);
+            let quality = (max - f) / (max - min);
             quality = Math.round(quality * 100);
 
             if(bestFloat > f)
@@ -240,23 +249,23 @@ async function generateFloats(raw_json, sett, progress, count, lists, obj)
             const full_obj = $.extend(true, {}, obj, {results: results});
             progress.updateText3("");
             progress.updateProgress(
-                ((progress.getProgress()+1) / count) * 100,
-                progress.getProgress()+1+"/"+count,
-                progress.getProgress()+1
+                ((progress.getProgress() + 1) / count) * 100,
+                progress.getProgress() + 1 + "/" + count,
+                progress.getProgress() + 1
             );
-            progress.updateText1("Best float: "+
+            progress.updateText1("Best float: " +
                 formatInfo(
                     getSettings(), null,
                     getBestFloat(full_obj),
                     getBestQuality(full_obj))
             );
             if(full_obj.results.length == 1)
-                progress.updateText2("Found "+Object.keys(filterRows(full_obj, sett, sett.filter_by).results).length
-                    +" offer above "+sett.qualities[sett.filter_by].limit+"%");
+                progress.updateText2("Found " + Object.keys(filterRows(full_obj, sett, sett.filter_by).results).length
+                    + " offer above " + sett.qualities[sett.filter_by].limit + "%");
             else
             {
-                progress.updateText2("Found "+Object.keys(filterRows(full_obj, sett, sett.filter_by).results).length
-                    +" offers above "+sett.qualities[sett.filter_by].limit+"%");
+                progress.updateText2("Found " + Object.keys(filterRows(full_obj, sett, sett.filter_by).results).length
+                    + " offers above " + sett.qualities[sett.filter_by].limit + "%");
             }
         }
     }
@@ -266,7 +275,7 @@ async function generateFloats(raw_json, sett, progress, count, lists, obj)
 
 async function getMultipleListings(base_url, start, count, currency, lang)
 {
-    const url = base_url+"/render/?start="+start+"&count="+count+"&currency="+currency+"&language="+lang;
+    const url = base_url + "/render/?start=" + start + "&count=" + count + "&currency=" + currency + "&language=" + lang;
     const r = await ajaxCall(url, "json");
     return r;
 }
@@ -278,7 +287,7 @@ async function scanMultipleFloats(count, sett, progress, lists)
     const obj = {};
     obj.results = {};
     const check = await getMultipleListings(
-        window.location.origin+window.location.pathname,
+        window.location.origin + window.location.pathname,
         0,
         10,
         sett.currency,
@@ -292,7 +301,7 @@ async function scanMultipleFloats(count, sett, progress, lists)
     while(count > 0 && con)
     {
         const json = await getMultipleListings(
-            window.location.origin+window.location.pathname,
+            window.location.origin + window.location.pathname,
             start,
             Math.min(count, max_count),
             sett.currency,
@@ -313,21 +322,23 @@ async function scanMultipleFloats(count, sett, progress, lists)
     const ids = [];
     for(let k in obj.results)
     {
-        if(! obj.results.hasOwnProperty(k))
+        if(!obj.results.hasOwnProperty(k))
             continue;
         ids.push(k)
     }
     setListings();
     const max_price = getMaximumPrice(obj.results).i;
     const price_threshold = max_price * (sett.search_threshold / 100);
-    removeSoldListings(getListings(), (max_price-price_threshold), ids);
+    removeSoldListings(getListings(), (max_price - price_threshold), ids);
     return obj;
 }
+
 function initializeScan()
 {
     const count = prompt("Input number of items to  scan");
-    window.location.href = "#scan="+count;
+    window.location.href = "#scan=" + count;
 }
+
 async function betterScan(count)
 {
     if(scanning)
@@ -342,7 +353,7 @@ async function betterScan(count)
         custom: progress.init()
     });
     progress.updateText1("Starting scan");
-    progress.updateProgress(0, "0/"+count, 0);
+    progress.updateProgress(0, "0/" + count, 0);
 
     const sett = getSettings();
     try
@@ -357,12 +368,14 @@ async function betterScan(count)
         addSession(getSessions(), filterRows(new_ses, sett, sett.session_threshold), sid);
         await sleep(1000);
 
-        window.location.hash = "#session_id="+sid;
+        window.location.hash = "#session_id=" + sid;
     }
     catch(e)
     {
         console.error(e);
-        progress.updateText3("Steam timed-out, try again");
+        setListings();
+        progress.updateText2("Steam timed-out, try again");
+        progress.updateText3("You might have to refresh the page");
         await sleep(2500);
     }
     finally
@@ -377,15 +390,15 @@ function fillImgTemplate(data)
     let s = IMG_TEMPLATE;
     for(let k in data)
     {
-        if(! data.hasOwnProperty(k))
+        if(!data.hasOwnProperty(k))
             continue;
         if(k == "icon_url")
         {
-            s = s.replaceAll("%"+k+"%", ICON_URL+data[k].replace(/http:\/\//g, "https://"));
+            s = s.replaceAll("%" + k + "%", ICON_URL + data[k].replace(/http:\/\//g, "https://"));
         }
         else
         {
-            s = s.replaceAll("%"+k+"%", data[k]);
+            s = s.replaceAll("%" + k + "%", data[k]);
         }
     }
     return s;
@@ -395,7 +408,7 @@ function getInfoFromHtml(html, id)
 {
     const parsed = $.parseHTML(html);
     const tempDom = $('<div>').append(parsed);
-    const row = $(".listing_"+id, tempDom);
+    const row = $(".listing_" + id, tempDom);
     const price_with_fee = row.find(".market_listing_price_with_fee").text().replace(/[\t\n]/gm, "");
     const price_without_fee = row.find(".market_listing_price_without_fee").text().replace(/[\t\n]/gm, "");
     const price_fee_only = row.find(".market_listing_price_with_publisher_fee_only").text().replace(/[\t\n]/gm, "");
@@ -428,13 +441,13 @@ async function scanFloat()
     //noinspection JSUnusedAssignment
     in_progress = true;
 
-    for(let i = 0; i < rows.length; i ++)
+    for(let i = 0; i < rows.length; i++)
     {
         const row = rows.eq(i);
 
         const before = row.find(".market_listing_item_name_block");
         row.find((".market_actionmenu_button")).click();
-        const link = API_URL+links[i];
+        const link = API_URL + links[i];
         try
         {
             const r = await ajaxCall(link, "json");
@@ -442,7 +455,7 @@ async function scanFloat()
             const f = info.floatvalue;
             const min = info.item_name && limits[0] < info.min ? info.min : limits[0];
             const max = info.item_name && limits[1] > info.max ? info.max : limits[1];
-            let quality = (max-f) / (max-min);
+            let quality = (max - f) / (max - min);
             quality = Math.round(quality * 100);
 
             if(bestFloat > f)
@@ -455,7 +468,7 @@ async function scanFloat()
             con.insertBefore(before);
 
             const obj = extractParams(row[0].outerHTML);
-            if(! obj.price_with_fee.match(/\d/))
+            if(!obj.price_with_fee.match(/\d/))
                 continue;
             obj.float = f;
             obj.quality = quality;
@@ -476,6 +489,7 @@ async function scanFloat()
     in_progress = false;
     return {results: results, game: game, img: img, name: name};
 }
+
 function setupCacheInfo(size)
 {
     $("#cache_info").remove();
@@ -489,12 +503,13 @@ function setupCacheInfo(size)
         class: "market_listing_filter_contents"
     });
     const btn = generateButton(ID_CLEAR_CACHE, "Clear cache", clearListings);
-    const content = $.parseHTML("<h2 class=\"market_section_title\">Cache</h2>Cache size: "+size.toFixed(2)+"kb");
+    const content = $.parseHTML("<h2 class=\"market_section_title\">Cache</h2>Cache size: " + size.toFixed(2) + "kb");
     content_container.append(btn);
     content_container.append(content);
     container.append(content_container);
     container.insertAfter(after);
 }
+
 function setupFloatContainer(float, quality, sett)
 {
     const qualities = sett.qualities;
@@ -514,6 +529,7 @@ function setupFloatContainer(float, quality, sett)
     }).appendTo(div);
     return div;
 }
+
 function scanPage()
 {
     const result = [];
@@ -537,7 +553,7 @@ async function scan()
         custom: progress.init()
     });
     progress.updateText1("Starting scan");
-    if(! await page(1, 10))
+    if(!await page(1, 10))
     {
         alert("Please manually navigate to page 1");
         $.LoadingOverlay("hide");
@@ -556,25 +572,25 @@ async function scan()
     offers.results = {};
     let best = "Loading floats...";
     progress.updateText1(best);
-    for(let i = 0; i < pages; i ++)
+    for(let i = 0; i < pages; i++)
     {
         const off = await scanFloat();
         $.extend(true, offers.results, off.results);
         offers.results = removeDuplicates(offers.results);
         offers.info = {game: off.game, name: off.name, img: off.img};
-        best = "Best float: "+formatInfo(getSettings(), null, getBestFloat(offers), getBestQuality(offers));
+        best = "Best float: " + formatInfo(getSettings(), null, getBestFloat(offers), getBestQuality(offers));
 
-        if(! await nextPage() || ! con)
+        if(!await nextPage() || !con)
             break;
 
-        progress.updateProgress(Math.round((i+1) * 100 / pages));
+        progress.updateProgress(Math.round((i + 1) * 100 / pages));
         progress.updateText1(best);
         progress.updateText3("");
 
         if(offers.results.length == 1)
-            progress.updateText2("Found "+filterRows(offers, settings, settings.filter_by).results.length+" offer above "+settings.qualities[settings.filter_by].limit+"%");
+            progress.updateText2("Found " + filterRows(offers, settings, settings.filter_by).results.length + " offer above " + settings.qualities[settings.filter_by].limit + "%");
         else
-            progress.updateText2("Found "+filterRows(offers, settings, settings.filter_by).results.length+" offers above "+settings.qualities[settings.filter_by].limit+"%");
+            progress.updateText2("Found " + filterRows(offers, settings, settings.filter_by).results.length + " offers above " + settings.qualities[settings.filter_by].limit + "%");
     }
     progress.updateText3("");
     progress.updateText1("Setting up the view...");
@@ -585,16 +601,16 @@ async function scan()
     addSession(getSessions(), offers, sid);
     await sleep(1000);
 
-    window.location.hash = "#session_id="+sid;
+    window.location.hash = "#session_id=" + sid;
 
     sendNotification("Scan finished",
         "Float scan of "
-        +pages
-        +" pages has just finished. Found "
-        +offers.length
-        +" offers that were above "
-        +settings.qualities[settings.filter_by].limit+"%."
-        +" Click here to view the results",
+        + pages
+        + " pages has just finished. Found "
+        + offers.length
+        + " offers that were above "
+        + settings.qualities[settings.filter_by].limit + "%."
+        + " Click here to view the results",
         function(data)
         {
             console.log(data)
@@ -617,30 +633,30 @@ async function nextPage(maxTries = 60)
         if(tries > maxTries)
             return false;
         await sleep(250);
-        tries ++;
+        tries++;
     }
     return true;
 }
 async function page(n, maxTries = 60)
 {
-    let btn = $(".market_paging_pagelink:contains('"+n+"')").eq(0);
+    let btn = $(".market_paging_pagelink:contains('" + n + "')").eq(0);
     let tries = 0;
-    if(! btn.length)
+    if(!btn.length)
         return false;
     if(btn.hasClass("active"))
     {
-        if(! await nextPage())
+        if(!await nextPage())
             return false;
     }
-    btn = $(".market_paging_pagelink:contains('"+n+"')").eq(0);
+    btn = $(".market_paging_pagelink:contains('" + n + "')").eq(0);
     btn.click();
-    while(! btn.hasClass("active"))
+    while(!btn.hasClass("active"))
     {
-        btn = $(".market_paging_pagelink:contains('"+n+"')").eq(0);
+        btn = $(".market_paging_pagelink:contains('" + n + "')").eq(0);
         if(tries > maxTries)
             return false;
         await sleep(250);
-        tries ++;
+        tries++;
     }
     return true;
 }
@@ -666,7 +682,7 @@ async function showResults(session, sett, filter = null, sortingMode = SORT_MODE
     filtered_results.results = sortRows(filtered_results.results, sortingMode);
     for(let k in filtered_results.results)
     {
-        if(! filtered_results.results.hasOwnProperty(k))
+        if(!filtered_results.results.hasOwnProperty(k))
             continue;
         const tier = getTier(sett, filtered_results.results[k].quality);
         display[k] = fillTemplate(filtered_results.results[k], sett, tier, filtered_results.info, k);
@@ -687,14 +703,14 @@ async function showResults(session, sett, filter = null, sortingMode = SORT_MODE
     }
     for(let k in display)
     {
-        if(! display.hasOwnProperty(k))
+        if(!display.hasOwnProperty(k))
             continue;
         const row = $(display[k]);
-        if(! row.find(".market_listing_price_with_fee").text().match(/\d/))
+        if(!row.find(".market_listing_price_with_fee").text().match(/\d/))
         {
             continue;
         }
-        row.find(".market_listing_buy_button span").text("Find original");
+        row.find(".market_listing_buy_button span").text("Find to buy");
         if(filtered_results.results[k].float == filtered_results.best.float)
         {
             //row.css("background-color", "rgba(38, 63, 149, 0.72)");
@@ -734,7 +750,7 @@ function getSearchUrl(id)
         id: id,
         session_id: sessionId,
     };
-    return "#search="+encodeURI(JSON.stringify(info));
+    return "#search=" + encodeURI(JSON.stringify(info));
 }
 
 function setupQualitySelect(sett, filter)
@@ -758,7 +774,7 @@ function setupQualitySelect(sett, filter)
             "outline": "none"
         }
     });
-    for(let i = 0; i < qualities.length; i ++)
+    for(let i = 0; i < qualities.length; i++)
     {
         if(qualities[i] == undefined || qualities[i] == null)
             continue;
@@ -792,7 +808,7 @@ function setupSortingSelect(selected)
             "outline": "none"
         }
     });
-    for(let i = 0; i < SORT_MODES.length; i ++)
+    for(let i = 0; i < SORT_MODES.length; i++)
     {
 
         const opt = $("<option>", {
@@ -820,7 +836,7 @@ function showSessionsOnMain(ses, sett)
         {
             let append = true;
 
-            if(! ses.hasOwnProperty(k))
+            if(!ses.hasOwnProperty(k))
                 continue;
             let s = SESSION_ROW_TEMPLATE;
             if(ses[k].best == null || ses[k].best == undefined || ses[k].info == null || ses[k].info == undefined ||
@@ -833,9 +849,9 @@ function showSessionsOnMain(ses, sett)
                 if(ses[k].info.hasOwnProperty(i))
                 {
                     if(i === "img")
-                        s = s.replaceAll("%"+i+"%", ses[k].info[i].replace(/http:\/\//g, "https://"));
+                        s = s.replaceAll("%" + i + "%", ses[k].info[i].replace(/http:\/\//g, "https://"));
                     else
-                        s = s.replaceAll("%"+i+"%", ses[k].info[i]);
+                        s = s.replaceAll("%" + i + "%", ses[k].info[i]);
                 }
             }
             s = s.replaceAll("%info%", info);
@@ -886,6 +902,7 @@ function showSessionsOnMain(ses, sett)
         window.location.reload();
     });
 }
+
 function fillTemplate(obj, sett, tier, global_info, id)
 {
     let s = ROW_TEMPLATE;
@@ -895,12 +912,12 @@ function fillTemplate(obj, sett, tier, global_info, id)
     for(let k in style)
     {
         if(style.hasOwnProperty(k))
-            styleAsString += k+": "+style[k]+";";
+            styleAsString += k + ": " + style[k] + ";";
     }
     for(let k in obj)
     {
         if(obj.hasOwnProperty(k))
-            s = s.replaceAll("%"+k+"%", obj[k]);
+            s = s.replaceAll("%" + k + "%", obj[k]);
     }
     for(let k in global_info)
     {
@@ -908,11 +925,11 @@ function fillTemplate(obj, sett, tier, global_info, id)
         {
             if(k === "img")
             {
-                s = s.replaceAll("%"+k+"%", global_info[k].replace(/http:\/\//g, "https://"));
+                s = s.replaceAll("%" + k + "%", global_info[k].replace(/http:\/\//g, "https://"));
             }
             else
             {
-                s = s.replaceAll("%"+k+"%", global_info[k]);
+                s = s.replaceAll("%" + k + "%", global_info[k]);
             }
         }
     }
@@ -921,6 +938,7 @@ function fillTemplate(obj, sett, tier, global_info, id)
     s = s.replaceAll("%style%", styleAsString);
     return s;
 }
+
 function extractParams(s)
 {
     const html = $($.parseHTML(s)[0]);
@@ -946,17 +964,17 @@ function sortRows(rows, sortingMode)
         const sortable = [];
         for(let k in rows)
         {
-            if(! rows.hasOwnProperty(k))
+            if(!rows.hasOwnProperty(k))
                 continue;
             sortable.push([k, rows[k], rows[k].price_with_fee]);
         }
         sortable.sort(function(a, b)
         {
-            return a[2].replace(/[^\d,.]/g, "").replace(/,/g, ".")-
+            return a[2].replace(/[^\d,.]/g, "").replace(/,/g, ".") -
                 b[2].replace(/[^\d,.]/g, "").replace(/,/g, ".");
         });
         const newRows = {};
-        for(let i = 0; i < sortable.length; i ++)
+        for(let i = 0; i < sortable.length; i++)
         {
             newRows[sortable[i][0]] = (sortable[i][1]);
         }
@@ -967,17 +985,17 @@ function sortRows(rows, sortingMode)
         const sortable = [];
         for(let k in rows)
         {
-            if(! rows.hasOwnProperty(k))
+            if(!rows.hasOwnProperty(k))
                 continue;
             sortable.push([k, rows[k], rows[k].price_with_fee]);
         }
         sortable.sort(function(a, b)
         {
-            return b[2].replace(/[^\d,.]/g, "").replace(/,/g, ".")-
+            return b[2].replace(/[^\d,.]/g, "").replace(/,/g, ".") -
                 a[2].replace(/[^\d,.]/g, "").replace(/,/g, ".");
         });
         const newRows = {};
-        for(let i = 0; i < sortable.length; i ++)
+        for(let i = 0; i < sortable.length; i++)
         {
             newRows[sortable[i][0]] = (sortable[i][1]);
         }
@@ -988,16 +1006,16 @@ function sortRows(rows, sortingMode)
         const sortable = [];
         for(let k in rows)
         {
-            if(! rows.hasOwnProperty(k))
+            if(!rows.hasOwnProperty(k))
                 continue;
             sortable.push([k, rows[k], rows[k].float]);
         }
         sortable.sort(function(a, b)
         {
-            return a[2]-b[2];
+            return a[2] - b[2];
         });
         const newRows = {};
-        for(let i = 0; i < sortable.length; i ++)
+        for(let i = 0; i < sortable.length; i++)
         {
             newRows[sortable[i][0]] = (sortable[i][1]);
         }
@@ -1008,16 +1026,16 @@ function sortRows(rows, sortingMode)
         const sortable = [];
         for(let k in rows)
         {
-            if(! rows.hasOwnProperty(k))
+            if(!rows.hasOwnProperty(k))
                 continue;
             sortable.push([k, rows[k], rows[k].float]);
         }
         sortable.sort(function(a, b)
         {
-            return b[2]-a[2];
+            return b[2] - a[2];
         });
         const newRows = {};
-        for(let i = 0; i < sortable.length; i ++)
+        for(let i = 0; i < sortable.length; i++)
         {
             newRows[sortable[i][0]] = (sortable[i][1]);
         }
@@ -1025,9 +1043,10 @@ function sortRows(rows, sortingMode)
     }
     return rows;
 }
+
 function filterRows(obj, settings, filter)
 {
-    const min_quality = filter == null || filter == undefined ? - 1 : settings.qualities[filter].limit;
+    const min_quality = filter == null || filter == undefined ? -1 : settings.qualities[filter].limit;
     const new_rows = {};
     new_rows.results = {};
     for(let k in obj.results)
@@ -1042,6 +1061,7 @@ function filterRows(obj, settings, filter)
     new_rows.info = obj.info;
     return new_rows;
 }
+
 function removeDuplicates(rows)
 {
     const new_rows = {};
@@ -1056,10 +1076,11 @@ function removeDuplicates(rows)
     }
     return new_rows;
 }
+
 function getBestFloat(obj)
 {
-    if(! obj.results)
-        return - 1;
+    if(!obj.results)
+        return -1;
     let best = 1;
     for(let k in obj.results)
     {
@@ -1068,10 +1089,11 @@ function getBestFloat(obj)
     }
     return best;
 }
+
 function getBestQuality(obj)
 {
-    if(! obj.results)
-        return - 1;
+    if(!obj.results)
+        return -1;
     let best = 0;
     for(let k in obj.results)
     {
@@ -1097,17 +1119,17 @@ async function findListing(info)
     con = true;
     searching = true;
     const url = decodeURI(window.location.href.replace(window.location.hash, ""));
-    if(! url.match(name.escapeRegExp()))
+    if(!url.match(name.escapeRegExp()))
     {
         window.location.href =
-            "https://steamcommunity.com/market/listings/730/"+encodeURI(name)+
-            "#search="+encodeURI(JSON.stringify(params));
+            "https://steamcommunity.com/market/listings/730/" + encodeURI(name) +
+            "#search=" + encodeURI(JSON.stringify(params));
         $.LoadingOverlay("hide");
         return 0;
     }
-    if(! await page(1))
+    if(!await page(1))
         return 0;
-    while(! $("#listing_"+id).length)
+    while(!$("#listing_" + id).length)
     {
         let sum = 0;
         const price_container = $(".market_listing_price_with_fee");
@@ -1116,19 +1138,19 @@ async function findListing(info)
             sum += parseFloat($(this).text().replace(/[^\d,.]/gm, "").replace(/,/, "."));
         });
         const curr_price = sum / price_container.length;
-        if(! con || curr_price > price * (1+(getSettings().search_threshold / 100)))
+        if(!con || curr_price > price * (1 + (getSettings().search_threshold / 100)))
         {
             $.LoadingOverlay("hide");
             return 0;
         }
-        if(! await nextPage())
+        if(!await nextPage())
         {
             $.LoadingOverlay("hide");
             return 0;
         }
         await sleep(getSettings().request_delay);
     }
-    $("#listing_"+id).css("background-color", "rgba(38, 63, 149, 0.72)");
+    $("#listing_" + id).css("background-color", "rgba(38, 63, 149, 0.72)");
     await scanFloat();
     /*$(".market_listing_row")[0].scrollIntoView(
      {
@@ -1161,25 +1183,25 @@ async function findListingNew(info)
     con = true;
     searching = true;
     const url = decodeURI(window.location.href.replace(window.location.hash, ""));
-    if(! url.match(name.escapeRegExp()))
+    if(!url.match(name.escapeRegExp()))
     {
         window.location.href =
-            "https://steamcommunity.com/market/listings/730/"+encodeURI(name)+
-            "#search="+encodeURI(JSON.stringify(params));
+            "https://steamcommunity.com/market/listings/730/" + encodeURI(name) +
+            "#search=" + encodeURI(JSON.stringify(params));
         $.LoadingOverlay("hide");
         return 0;
     }
     $.LoadingOverlay("show", {
         custom: progress.init()
     });
-    progress.updateText3("Searching for \""+name+"\"");
-    progress.updateText2("Target price: "+priceAsString);
+    progress.updateText3("Searching for \"" + name + "\"");
+    progress.updateText2("Target price: " + priceAsString);
     let current_price = 0;
     let current_price_as_string = "0";
     let start = 0;
     const max_count = 100;
     const check = await getMultipleListings(
-        window.location.origin+window.location.pathname,
+        window.location.origin + window.location.pathname,
         0,
         10,
         sett.currency,
@@ -1192,11 +1214,11 @@ async function findListingNew(info)
     let found = false;
     let count = check.total_count;
     let page = 0;
-    while(current_price < price * (1+(sett.search_threshold / 100)) && con)
+    while(current_price < price * (1 + (sett.search_threshold / 100)) && con)
     {
         await sleep(sett.request_delay);
         const json = await getMultipleListings(
-            window.location.origin+window.location.pathname,
+            window.location.origin + window.location.pathname,
             start,
             Math.min(count, max_count),
             currency,
@@ -1216,20 +1238,20 @@ async function findListingNew(info)
             }
         });
         if(current_price > 0)
-            progress.updateText1("Current price: "+current_price_as_string);
+            progress.updateText1("Current price: " + current_price_as_string);
 
         current_price = isNaN(current_price) ? 0 : current_price;
-        const target = $("#listing_"+listingId, tempDom);
+        const target = $("#listing_" + listingId, tempDom);
         const rows = $(".market_listing_row", tempDom);
         const index = rows.index(target);
-        if(index > - 1 && con)
+        if(index > -1 && con)
         {
             const new_url = window.location.href.replace(window.location.hash, "")
-                +"?count="+sett.search_precaution
-                +"&start="+Math.max((page * 100+index-Math.floor(Math.min(sett.search_precaution, max_count) / 2)), 0)
-                +"&language="+sett.lang
-                +"&currency="+sett.currency
-                +"#filter="+listingId;
+                + "?count=" + sett.search_precaution
+                + "&start=" + Math.max((page * 100 + index - Math.floor(Math.min(sett.search_precaution, max_count) / 2)), 0)
+                + "&language=" + sett.lang
+                + "&currency=" + sett.currency
+                + "#filter=" + listingId;
             found = true;
             progress.updateText1("Listing found");
             progress.updateText2("Redirecting...");
@@ -1238,7 +1260,7 @@ async function findListingNew(info)
         page += 1;
         start += max_count;
     }
-    if(! found && con)
+    if(!found && con)
     {
         scanning = false;
         $.LoadingOverlay("hide");
@@ -1249,14 +1271,14 @@ async function findListingNew(info)
             saveSessions();
         }
         if(sessionId !== null)
-            window.location.replace("#session_id="+sessionId);
+            window.location.replace("#session_id=" + sessionId);
     }
-    else if(! found)
+    else if(!found)
     {
         scanning = false;
         $.LoadingOverlay("hide");
         if(sessionId !== null)
-            window.location.replace("#session_id="+sessionId);
+            window.location.replace("#session_id=" + sessionId);
     }
 
     con = false;
@@ -1264,7 +1286,7 @@ async function findListingNew(info)
 }
 async function filterListing(id)
 {
-    $(".market_listing_row").not("#listing_"+id).remove(); //Remove every listing except the one we are looking for
+    $(".market_listing_row").not("#listing_" + id).remove(); //Remove every listing except the one we are looking for
     await scanFloat();
 
     const inspectLink = scanPage()[0];
@@ -1274,7 +1296,7 @@ async function filterListing(id)
     const graphControls = graph.siblings(".pricehistory_zoom_controls");
     const listingSearch = $("#listings").find(".market_listing_filter");
 
-    const listing = $($("#listing_"+id));
+    const listing = $($("#listing_" + id));
     const floatContainer = listing.find("span.market_listing_item_float");
     const listingPrice = listing.find("span.market_listing_price_with_fee");
     const smallBuyButton = listing.find("a.item_market_action_button");
@@ -1288,7 +1310,7 @@ async function filterListing(id)
     bigBuyButton.css("float", "");
     largeItem.append(bigBuyButton);
 
-    const price = "Price: "+listingPrice.text();
+    const price = "Price: " + listingPrice.text();
     const float = floatContainer[0].outerHTML;
 
     //Load descriptors and nametag
@@ -1298,23 +1320,24 @@ async function filterListing(id)
 
         let exteriorDescriptorIndex;
         const descriptors = assets.descriptors;
-        for(let i = 0; i < descriptors.length; i ++)
+        for(let i = 0; i < descriptors.length; i++)
         {
             const descriptor = descriptors[i];
             if(descriptor.value.match(/(exterior|zewnętrze)/i) !== null)
             {
                 exteriorDescriptorIndex = i;
-                descriptor.value += " "+float;
+                descriptor.value += " " + float;
             }
         }
 
-        descriptors.splice(exteriorDescriptorIndex+1, 0, {type: "html", value: price});
-        descriptors.splice(exteriorDescriptorIndex+1, 0, EMPTY_DESCRIPTOR);
+        descriptors.splice(exteriorDescriptorIndex + 1, 0, {type: "html", value: price});
+        descriptors.splice(exteriorDescriptorIndex + 1, 0, EMPTY_DESCRIPTOR);
 
         appendDescriptors(descriptors, true);
         appendFraudWarnings(assets.frauds, true);
     });
 }
+
 function ajaxCall(url, type)
 {
     return new Promise(resolve =>
@@ -1331,6 +1354,7 @@ function ajaxCall(url, type)
         })
     );
 }
+
 function getExterior(url, a)
 {
     for(let e in a)
@@ -1340,12 +1364,13 @@ function getExterior(url, a)
     }
     return [0, 1];
 }
+
 function getTier(settings, quality)
 {
     const qualities = settings.qualities;
     let best;
-    let bestN = - 1;
-    for(let i = 0; i < qualities.length; i ++)
+    let bestN = -1;
+    for(let i = 0; i < qualities.length; i++)
     {
         if(qualities[i] == undefined || qualities[i] == null)
             continue;
@@ -1357,22 +1382,25 @@ function getTier(settings, quality)
     }
     return best;
 }
+
 function injectAssets(assets)
 {
     if(assets == null || assets == undefined)
         return 0;
     const script = $("<script>");
-    script.text("g_rgAssets = $J.parseJSON('"+JSON.stringify(assets).escapeJSON()+"')");
+    script.text("g_rgAssets = $J.parseJSON('" + JSON.stringify(assets).escapeJSON() + "')");
     $("body").prepend(script);
 }
+
 function injectListings(lists)
 {
     if(lists == null || lists == undefined)
         return 0;
     const script = $("<script>");
-    script.text("g_rgListingInfo = $J.parseJSON('"+JSON.stringify(lists).escapeJSON()+"')");
+    script.text("g_rgListingInfo = $J.parseJSON('" + JSON.stringify(lists).escapeJSON() + "')");
     $("body").prepend(script);
 }
+
 function injectHovers(hovers)
 {
     if(hovers == null || hovers == undefined)
@@ -1381,12 +1409,14 @@ function injectHovers(hovers)
     script.text(hovers);
     $("body").prepend(script);
 }
+
 function injectActionButtonSetup()
 {
     const script = $("<script>");
     script.text("InstallMarketActionMenuButtons();");
     $("body").prepend(script);
 }
+
 function setup(selector, callback, n = 0)
 {
     if($(selector).length > 0)
@@ -1394,9 +1424,10 @@ function setup(selector, callback, n = 0)
     else if(n < 25)
         setTimeout(function()
         {
-            setup(selector, callback, n+1)
+            setup(selector, callback, n + 1)
         }, 500);
 }
+
 function sendNotification(title, message, callback)
 {
     //noinspection JSUnresolvedVariable
@@ -1411,6 +1442,7 @@ function sendNotification(title, message, callback)
         }
     );
 }
+
 function setOptions(options, notify = true)
 {
     if(options[STORAGE_SETTINGS])
@@ -1421,10 +1453,12 @@ function setOptions(options, notify = true)
     if(notify)
         onOptionsLoaded();
 }
+
 function getSettings()
 {
     return settings;
 }
+
 function saveSettings(settings)
 {
     const obj = {};
@@ -1432,11 +1466,13 @@ function saveSettings(settings)
     //noinspection JSUnresolvedVariable
     chrome.storage.sync.set(obj);
 }
+
 function loadSettings()
 {
     //noinspection JSUnresolvedVariable
     chrome.storage.sync.get(STORAGE_SETTINGS, setOptions);
 }
+
 function addSession(sess, new_session, id)
 {
     new_session.date = new Date().getTime();
@@ -1444,7 +1480,7 @@ function addSession(sess, new_session, id)
     const tmp = {};
     for(let k in sess)
     {
-        if(! sess.hasOwnProperty(k))
+        if(!sess.hasOwnProperty(k))
             continue;
         tmp[k] = compressSession(sess[k]);
     }
@@ -1464,34 +1500,38 @@ function removeItemFromSession(sess, session_id, item_id)
 {
     delete sess[session_id].results[item_id];
 }
+
 function getSessions()
 {
     return sessions;
 }
+
 function removeSession(sessions, id)
 {
     const tmp = $.extend(true, {}, sessions);
     delete tmp[id];
     for(let k in tmp)
     {
-        if(! tmp.hasOwnProperty(k))
+        if(!tmp.hasOwnProperty(k))
             continue;
         tmp[k] = compressSession(tmp[k]);
     }
     window.localStorage.setItem(STORAGE_SESSIONS, LZString.compress(JSON.stringify(tmp)));
 }
+
 function saveSessions()
 {
     const all = getSessions();
     const tmp = {};
     for(let k in all)
     {
-        if(! all.hasOwnProperty(k))
+        if(!all.hasOwnProperty(k))
             continue;
         tmp[k] = compressSession(all[k]);
     }
     window.localStorage.setItem(STORAGE_SESSIONS, LZString.compress(JSON.stringify(tmp)));
 }
+
 function setSessions()
 {
     const item = window.localStorage.getItem(STORAGE_SESSIONS);
@@ -1506,7 +1546,7 @@ function setSessions()
     }
     for(let k in sessions)
     {
-        if(! sessions.hasOwnProperty(k))
+        if(!sessions.hasOwnProperty(k))
             continue;
         try
         {
@@ -1518,10 +1558,12 @@ function setSessions()
         }
     }
 }
+
 function clearSessions()
 {
     window.localStorage.removeItem(STORAGE_SESSIONS);
 }
+
 async function filterSession(sess, session_id, sett)
 {
     const progress = new LoadingOverlayProgress(OVERLAY_PROGRESS_SETTINGS);
@@ -1540,7 +1582,7 @@ async function filterSession(sess, session_id, sett)
     let start = 0;
     const max_count = 100;
     const check = await getMultipleListings(
-        window.location.origin+window.location.pathname,
+        window.location.origin + window.location.pathname,
         0,
         10,
         sett.currency,
@@ -1555,14 +1597,14 @@ async function filterSession(sess, session_id, sett)
     const price_threshold = max_price * (sett.search_threshold / 100);
     progress.updateText3("Removing sold listings for this session");
     progress.updateText2("Maximum price: "
-        +max_price_s
+        + max_price_s
             .replace(/,/, ".")
-            .replace(max_price, (max_price+price_threshold).toFixed(2)));
-    while(current_price < max_price+price_threshold && con)
+            .replace(max_price, (max_price + price_threshold).toFixed(2)));
+    while(current_price < max_price + price_threshold && con)
     {
         await sleep(sett.request_delay);
         const json = await getMultipleListings(
-            "http://steamcommunity.com/market/listings/730/"+encodeURI(session.info.name),
+            "http://steamcommunity.com/market/listings/730/" + encodeURI(session.info.name),
             start,
             Math.min(count, max_count),
             currency,
@@ -1593,7 +1635,7 @@ async function filterSession(sess, session_id, sett)
             }
         });
         if(current_price > 0)
-            progress.updateText1("Current price: "+current_price_as_string);
+            progress.updateText1("Current price: " + current_price_as_string);
 
         current_price = isNaN(current_price) ? 0 : current_price;
         start += max_count;
@@ -1603,20 +1645,20 @@ async function filterSession(sess, session_id, sett)
         let amount = 0;
         for(let k in items)
         {
-            if(! items.hasOwnProperty(k))
+            if(!items.hasOwnProperty(k))
                 continue;
             if(ids.indexOf(k) < 0)
             {
                 removeItemFromSession(sess, session_id, k);
-                amount ++;
+                amount++;
             }
         }
         const lists = getListings();
-        removeSoldListings(lists, max_price-price_threshold, ids);
+        removeSoldListings(lists, max_price - price_threshold, ids);
         saveSessions();
         progress.updateText3("");
         progress.updateText1("Finished");
-        progress.updateText2("Removed "+amount+" sold listings");
+        progress.updateText2("Removed " + amount + " sold listings");
         await sleep(2500);
         $.LoadingOverlay("hide");
     }
@@ -1627,6 +1669,7 @@ async function filterSession(sess, session_id, sett)
     con = false;
     searching = false;
 }
+
 function compressSession(session)
 {
     if(session.hasOwnProperty("i") && session.hasOwnProperty("b") && session.hasOwnProperty("r"))
@@ -1646,21 +1689,22 @@ function compressSession(session)
     compressed.r = {};
     for(let k in session.results)
     {
-        if(! session.results.hasOwnProperty(k))
+        if(!session.results.hasOwnProperty(k))
             continue;
         const result = session.results[k];
-        const match = result.seller.match(new RegExp(AVATAR_URL+"(.*)"));
+        const match = result.seller.match(new RegExp(AVATAR_URL + "(.*)"));
         compressed.r[k] = {
             f: result.float,
             q: result.quality,
             p: result.price_with_fee,
             o: result.price_fee_only,
             w: result.price_without_fee,
-            s: match !== null ? AVATAR_SHORT+match[1] : result.seller
+            s: match !== null ? AVATAR_SHORT + match[1] : result.seller
         }
     }
     return compressed;
 }
+
 function decompressSession(session)
 {
     const decompressed = {};
@@ -1678,17 +1722,17 @@ function decompressSession(session)
     decompressed.results = {};
     for(let k in session.r)
     {
-        if(! session.r.hasOwnProperty(k))
+        if(!session.r.hasOwnProperty(k))
             continue;
         const result = session.r[k];
-        const match = result.s.match(new RegExp(AVATAR_SHORT+"(.*)"));
+        const match = result.s.match(new RegExp(AVATAR_SHORT + "(.*)"));
         decompressed.results[k] = {
             float: result.f,
             quality: result.q,
             price_with_fee: result.p,
             price_fee_only: result.o,
             price_without_fee: result.w,
-            seller: match !== null ? AVATAR_URL+match[1] : result.s
+            seller: match !== null ? AVATAR_URL + match[1] : result.s
         }
     }
     return decompressed;
@@ -1699,38 +1743,42 @@ function removeSoldListings(lists, max_price, ids)
     let c = 0;
     for(let k in lists)
     {
-        if(! lists.hasOwnProperty(k))
+        if(!lists.hasOwnProperty(k))
             continue;
         const price = parseFloat(lists[k].p.replace(/,/, ".").replace(/[^[\d,.]]/gm, ""));
         if(price < max_price && ids.indexOf(k) < 0)
         {
             delete lists[k];
-            c ++;
+            c++;
         }
     }
     console.log("Removed %s sold listings", c);
     saveListings(lists);
 }
+
 function saveListings(lists)
 {
     const all_lists = getAllListings();
     all_lists[getNameFromUrl()] = lists;
     saveAllListings(all_lists, true);
 }
+
 function addListing(id, new_listing)
 {
     const itemName = getNameFromUrl();
     const all_lists = getAllListings();
-    if(! all_lists.hasOwnProperty(itemName))
+    if(!all_lists.hasOwnProperty(itemName))
         all_lists[itemName] = {};
     all_lists[itemName][id] = new_listing;
     const new_lists = $.extend(true, {}, all_lists);
     saveAllListings(new_lists);
 }
+
 function getListings()
 {
     return listings;
 }
+
 function setListings()
 {
     let allListings = getAllListings();
@@ -1740,20 +1788,23 @@ function setListings()
     if(byteCount(compress) <= 16)
         setupCacheInfo(0);
     else
-        setupCacheInfo(byteCount(compress+name+"{}") / 1024);
+        setupCacheInfo(byteCount(compress + name + "{}") / 1024);
 }
+
 function clearAllListings()
 {
     window.localStorage.removeItem(STORAGE_LISTINGS);
     setListings();
     saveAllListings({}, true);
 }
+
 function clearListings()
 {
     const allListings = getAllListings();
     delete allListings[getNameFromUrl()];
     saveAllListings(allListings, true);
 }
+
 function saveAllListings(lists, update)
 {
     all_listings = lists;
@@ -1770,10 +1821,12 @@ function saveAllListings(lists, update)
         window.localStorage.setItem(STORAGE_LISTINGS, compress);
     }
 }
+
 function getAllListings()
 {
     return all_listings;
 }
+
 function fetchAllListings()
 {
     const item = window.localStorage.getItem(STORAGE_LISTINGS);
@@ -1784,25 +1837,6 @@ function fetchAllListings()
         const decompress = LZString.decompress(item);
         all_listings = $.parseJSON(decompress);
     }
-}
-function clearListingsOlderThen(days)
-{
-    const deadline = days * 24 * 60 * 60 * 1000;
-    const now = Date.now();
-    const allListings = getAllListings();
-    for(let k in allListings)
-    {
-        if(! allListings.hasOwnProperty(k))
-            continue;
-        for(let l in allListings[k])
-        {
-            if(! allListings[k].hasOwnProperty(l))
-                continue;
-            if(allListings[k][l].d+deadline < now)
-                delete allListings[k][l];
-        }
-    }
-    saveAllListings(allListings, true);
 }
 
 function getNameFromUrl(url = null)
@@ -1816,6 +1850,7 @@ function getNameFromUrl(url = null)
         return null;
     return encodeURI(decodeURI(e[1]));
 }
+
 function onMessageListener(request, sender, callback)
 {
     if(request.type == TYPE_UPDATE_SETTINGS)
