@@ -54,6 +54,14 @@ $(window).on("hashchange", function(e)
 
 $(window).on("popstate", handlePopStateEvent);
 
+$(window).focus(function()
+{
+    sendFocusState(true);
+}).blur(function()
+{
+    sendFocusState(false);
+});
+
 async function onOptionsLoaded(max_tries = 100)
 {
     let tries = 0;
@@ -75,26 +83,34 @@ function handlePopStateEvent()
         con = false;
 }
 
-function hashActions(sess)
+async function hashActions(sess)
 {
     const session_match = window.location.hash.match(/session_id=([\da-z]+)/);
     const search_match = window.location.hash.match(/search=(.+)/);
     const filter_match = window.location.hash.match(/filter=(\d+)/);
     const scan_match = window.location.hash.match(/scan=(\d+)/);
+    const remove_match = window.location.hash.match(/remove_session=([\da-z]+)/);
+    const filter_session_match = window.location.hash.match(/filter_session=([\da-z]+)/);
     let remove_hash = true;
+
     if(session_match && session_match[1])
     {
         const sid = session_match[1];
         if(sess[sid] !== null && sess[sid] !== undefined)
         {
-            $("#" + ID_ONE_PAGE_SCAN).add("#" + ID_FILTER_SESSION).remove();
             showResults(sess[sid], getSettings());
+
+            //$("#mainContents").find("div.market_page_fullwidth.market_listing_firstsection").remove();
+            $("#" + ID_ONE_PAGE_SCAN).add("#" + ID_FILTER_SESSION).add("#" + ID_REMOVE_SESSION).remove();
+            $("div a.btn_green_white_innerfade.btn_medium.market_noncommodity_buyorder_button").parent().remove();
+
             const before = $("#" + ID_BATCH_SCAN).parent();
-            const btn = generateButton(ID_FILTER_SESSION, "Filter session", function()
-            {
-                filterSession(sess, sid, getSettings());
-            });
+            const btn = generateButton(ID_FILTER_SESSION, "Filter session", null, "#filter_session=" + sid);
+            const removeBtn = generateButton(ID_REMOVE_SESSION, "Delete session", null, "#remove_session=" + sid);
+
+            removeBtn.insertBefore(before);
             btn.insertBefore(before);
+
             remove_hash = false;
         }
         else
@@ -102,19 +118,45 @@ function hashActions(sess)
             alert("Invalid session ID");
         }
     }
-    if(search_match && search_match[1])
+    else if(search_match && search_match[1])
     {
         const info = search_match[1];
         findListingNew(info);
     }
-    if(filter_match && filter_match[1])
+    else if(filter_match && filter_match[1])
     {
         filterListing(filter_match[1]);
         remove_hash = false;
     }
-    if(scan_match && scan_match[1])
+    else if(scan_match && scan_match[1])
     {
         betterScan(parseInt(scan_match[1]));
+    }
+    else if(remove_match !== null && remove_match[1] !== null)
+    {
+        removeSession(sess, remove_match[1]);
+        window.location.reload();
+    }
+    else if(filter_session_match !== null && filter_session_match[1] !== null)
+    {
+        const sessionId = filter_session_match[1];
+        if(sess[sessionId] !== null && sess[sessionId] !== undefined)
+        {
+            remove_hash = false;
+            const finishedProperly = await filterSession(sess, sessionId) === 1;
+            if(finishedProperly)
+            {
+                window.location.hash = "#session_id=" + sessionId;
+            }
+            else
+            {
+                alert("Steam timed-out, to retry filtering refresh the page");
+            }
+        }
+        else
+        {
+            alert("Invalid session ID");
+        }
     }
     if(remove_hash)
         window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
@@ -138,7 +180,7 @@ function buttons()
     better_scan_btn.insertBefore(before);
 }
 
-function generateButton(id, txt, onclick = null, remove)
+function generateButton(id, txt, onclick = null, href = null)
 {
     $("#" + id).remove();
     const start = $("<div>", {
@@ -152,6 +194,8 @@ function generateButton(id, txt, onclick = null, remove)
         class: "btn_medium btn_green_white_innerfade",
         id: id
     });
+    if(href !== null)
+        btn.attr("href", href);
     const text = $("<span>", {
         text: txt
     });
@@ -385,9 +429,9 @@ async function betterScan(count)
         const iconMatch = newSession.info.img.match(/src="(.*?)"/);
         sendNotification("Scan finished",
             "Name: " + newSession.info.name + "\n" +
-            "Count: " + count + "\n" +
-            "Best float: " + formatInfo(sett, null, newSession.best.float, newSession.best.quality)
-            , iconMatch[1]);
+            "Requested count: " + count + "\n" +
+            "Filtered count: " + Object.keys(newSession.results).length + "\n" +
+            "Best float: " + formatInfo(sett, null, newSession.best.float, newSession.best.quality));
     }
 }
 
@@ -884,11 +928,7 @@ function showSessionsOnMain(ses, sett)
                 }
             }
             const parsed = $($.parseHTML(s)[0]);
-            parsed.find(".market_session_delete_button").click(function()
-            {
-                removeSession(ses, k);
-                window.location.reload();
-            });
+            parsed.find("div.market_session_delete_button a").attr("href", "#remove_session=" + k);
 
             if(append)
                 sessions_container.append(parsed);
@@ -907,8 +947,12 @@ function showSessionsOnMain(ses, sett)
     container.append(sessions_container);
     sessions_container.find("#delete_all_sessions").click(function()
     {
-        clearSessions();
-        window.location.reload();
+        let remove = confirm("Are you sure you want to remove all sessions?");
+        if(remove)
+        {
+            clearSessions();
+            window.location.reload();
+        }
     });
 }
 
@@ -1106,7 +1150,7 @@ function getBestQuality(obj)
     let best = 0;
     for(let k in obj.results)
     {
-        if(obj.results.hasOwnProperty(k) && obj.results[k].quality !== 100)
+        if(obj.results.hasOwnProperty(k))
             best = Math.max(obj.results[k].quality, best);
     }
     return best;
@@ -1438,6 +1482,29 @@ function setup(selector, callback, n = 0)
         }, 500);
 }
 
+/**
+ * Sends a chrome message to notify the background script that the window has lost focus
+ * @param {boolean} state
+ * @param callback
+ */
+function sendFocusState(state, callback = null)
+{
+    const request = {
+        type: TYPE_WINDOW_FOCUS,
+        data: {
+            has_focus: state
+        }
+    };
+    if(typeof callback === "function")
+    {
+        chrome.runtime.sendMessage(request, callback);
+    }
+    else
+    {
+        chrome.runtime.sendMessage(request);
+    }
+}
+
 function sendNotification(title, message, icon = null, callback = null)
 {
     const request = {
@@ -1577,7 +1644,7 @@ function clearSessions()
     window.localStorage.removeItem(STORAGE_SESSIONS);
 }
 
-async function filterSession(sess, session_id, sett)
+async function filterSession(sess, session_id, sett = getSettings())
 {
     const progress = new LoadingOverlayProgress(OVERLAY_PROGRESS_SETTINGS);
     con = true;
@@ -1594,14 +1661,23 @@ async function filterSession(sess, session_id, sett)
     let current_price_as_string = "0";
     let start = 0;
     const max_count = 100;
-    const check = await getMultipleListings(
-        window.location.origin + window.location.pathname,
-        0,
-        10,
-        sett.currency,
-        sett.lang
-    );
-    if(check.success !== true)
+
+    let check;
+    try
+    {
+        check = await getMultipleListings(
+            window.location.origin + window.location.pathname,
+            0,
+            10,
+            sett.currency,
+            sett.lang
+        );
+    }
+    catch(e)
+    {
+        console.error(e);
+    }
+    if(check === undefined || check === null || check.success !== true)
         return 0;
     let count = check.total_count;
     $.LoadingOverlay("show", {
@@ -1610,14 +1686,13 @@ async function filterSession(sess, session_id, sett)
     const price_threshold = max_price * (sett.search_threshold / 100);
     progress.updateText3("Removing sold listings for this session");
     progress.updateText2("Maximum price: "
-        + max_price_s
-            .replace(/,/, ".")
+        + max_price_s.replace(/,/, ".")
             .replace(max_price, (max_price + price_threshold).toFixed(2)));
     while(current_price < max_price + price_threshold && con)
     {
         await sleep(sett.request_delay);
         const json = await getMultipleListings(
-            "http://steamcommunity.com/market/listings/730/" + encodeURI(session.info.name),
+            "https://steamcommunity.com/market/listings/730/" + encodeURI(session.info.name),
             start,
             Math.min(count, max_count),
             currency,
@@ -1681,6 +1756,8 @@ async function filterSession(sess, session_id, sett)
     }
     con = false;
     searching = false;
+
+    return 1;
 }
 
 function compressSession(session)

@@ -222,7 +222,7 @@ const SVG_ICON_CLEAR = "<svg xmlns=\"http://www.w3.org/2000/svg\" fill=\"#000000
     "<path d=\"M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z\"/>" +
     "<path d=\"M0 0h24v24H0z\" fill=\"none\"/>" +
     "</svg>";
-const NOTIFICATION_SCAN = "NOTIFICATION_SCAN";
+const NOTIFICATION_SCAN = "ID_NOTIFICATION_SCAN-";
 const API_URL = "https://api.csgofloat.com:1738/?url=";
 //const COUNTRY_CODE_API = "http://ip-api.com/json";
 /*
@@ -385,9 +385,11 @@ const ID_ONE_PAGE_SCAN = "one_page_scan";
 const ID_BATCH_SCAN = "batch_scan";
 const ID_CLEAR_CACHE = "clear_cache";
 const ID_FILTER_SESSION = "filter_session";
+const ID_REMOVE_SESSION = "remove_session";
 const TYPE_NOTIFY = "TYPE_NOTIFY";
 const TYPE_UPDATE_SETTINGS = "TYPE_UPDATE_SETTINGS";
 const TYPE_CLEAR_CACHE = "TYPE_CLEAR_CACHE";
+const TYPE_WINDOW_FOCUS = "TYPE_WINDOW_FOCUS";
 
 const EMPTY_DESCRIPTOR = {type: "html", value: decodeHtml("&nbsp;")};
 
