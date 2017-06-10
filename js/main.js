@@ -259,7 +259,7 @@ async function generateFloats(raw_json, sett, progress, count, lists, obj)
                     getBestFloat(full_obj),
                     getBestQuality(full_obj))
             );
-            if(full_obj.results.length == 1)
+            if(full_obj.results.length === 1)
                 progress.updateText2("Found " + Object.keys(filterRows(full_obj, sett, sett.filter_by).results).length
                     + " offer above " + sett.qualities[sett.filter_by].limit + "%");
             else
@@ -293,7 +293,7 @@ async function scanMultipleFloats(count, sett, progress, lists)
         sett.currency,
         sett.lang
     );
-    if(check.success != true)
+    if(check.success !== true)
         return obj;
 
     count = Math.min(count, check.total_count);
@@ -307,7 +307,7 @@ async function scanMultipleFloats(count, sett, progress, lists)
             sett.currency,
             sett.lang
         );
-        if(json.success != true)
+        if(json.success !== true)
         {
             progress.updateText3("Steam timed-out, retrying...");
             await sleep(sett.request_delay);
@@ -392,7 +392,7 @@ function fillImgTemplate(data)
     {
         if(!data.hasOwnProperty(k))
             continue;
-        if(k == "icon_url")
+        if(k === "icon_url")
         {
             s = s.replaceAll("%" + k + "%", ICON_URL + data[k].replace(/http:\/\//g, "https://"));
         }
@@ -562,7 +562,7 @@ async function scan()
     scanning = true;
     con = true;
     const pages = prompt("Pages to scan");
-    if(pages == null || pages < 1)
+    if(pages === null || pages < 1)
     {
         scanning = false;
         $.LoadingOverlay("hide");
@@ -587,7 +587,7 @@ async function scan()
         progress.updateText1(best);
         progress.updateText3("");
 
-        if(offers.results.length == 1)
+        if(offers.results.length === 1)
             progress.updateText2("Found " + filterRows(offers, settings, settings.filter_by).results.length + " offer above " + settings.qualities[settings.filter_by].limit + "%");
         else
             progress.updateText2("Found " + filterRows(offers, settings, settings.filter_by).results.length + " offers above " + settings.qualities[settings.filter_by].limit + "%");
@@ -628,7 +628,7 @@ async function nextPage(maxTries = 60)
     if(b === null || b === undefined || b.hasClass("disabled"))
         return false;
     b.click();
-    while(currentPage == $(".market_paging_pagelink.active").eq(0).text())
+    while(currentPage === $(".market_paging_pagelink.active").eq(0).text())
     {
         if(tries > maxTries)
             return false;
@@ -692,7 +692,7 @@ async function showResults(session, sett, filter = null, sortingMode = SORT_MODE
         $(".market_listing_table_header").remove();
         con.prepend($.parseHTML(NO_RESULTS_HEADER));
     }
-    else if(Object.keys(display).length == 1)
+    else if(Object.keys(display).length === 1)
     {
         $(".market_listing_table_header").remove();
     }
@@ -711,7 +711,7 @@ async function showResults(session, sett, filter = null, sortingMode = SORT_MODE
             continue;
         }
         row.find(".market_listing_buy_button span").text("Find to buy");
-        if(filtered_results.results[k].float == filtered_results.best.float)
+        if(filtered_results.results[k].float === filtered_results.best.float)
         {
             //row.css("background-color", "rgba(38, 63, 149, 0.72)");
             con.prepend(row);
@@ -744,7 +744,7 @@ async function showResults(session, sett, filter = null, sortingMode = SORT_MODE
 function getSearchUrl(id)
 {
     const sessionMatch = window.location.hash.match(/session_id=([\da-z]+)/);
-    const sessionId = sessionMatch == null ? null : sessionMatch[1];
+    const sessionId = sessionMatch === null ? null : sessionMatch[1];
     const session = getSessions()[sessionId];
     const info = {
         id: id,
@@ -755,7 +755,7 @@ function getSearchUrl(id)
 
 function setupQualitySelect(sett, filter)
 {
-    if(filter == null || filter == undefined)
+    if(filter === null || filter === undefined)
         filter = sett.filter_by;
     $("#quality_select").remove();
     const qualities = sett.qualities;
@@ -776,13 +776,13 @@ function setupQualitySelect(sett, filter)
     });
     for(let i = 0; i < qualities.length; i++)
     {
-        if(qualities[i] == undefined || qualities[i] == null)
+        if(qualities[i] === undefined || qualities[i] === null)
             continue;
         const opt = $("<option>", {
             value: i,
             text: qualities[i].name
         });
-        if(i == filter)
+        if(i === filter)
             opt.prop("selected", true);
         select.append(opt);
     }
@@ -839,8 +839,8 @@ function showSessionsOnMain(ses, sett)
             if(!ses.hasOwnProperty(k))
                 continue;
             let s = SESSION_ROW_TEMPLATE;
-            if(ses[k].best == null || ses[k].best == undefined || ses[k].info == null || ses[k].info == undefined ||
-                ses[k].results == null || ses[k].results == undefined)
+            if(ses[k].best === null || ses[k].best === undefined || ses[k].info === null || ses[k].info === undefined ||
+                ses[k].results === null || ses[k].results === undefined)
                 continue;
             //const tier = getTier(sett, ses[k].best.quality);
             const info = formatInfo(sett, null, ses[k].best.float, ses[k].best.quality);
@@ -1046,7 +1046,7 @@ function sortRows(rows, sortingMode)
 
 function filterRows(obj, settings, filter)
 {
-    const min_quality = filter == null || filter == undefined ? -1 : settings.qualities[filter].limit;
+    const min_quality = filter === null || filter === undefined ? -1 : settings.qualities[filter].limit;
     const new_rows = {};
     new_rows.results = {};
     for(let k in obj.results)
@@ -1113,7 +1113,7 @@ async function findListing(info)
     const id = params.id;
     const name = params.name;
     const price = parseFloat(params.price.replace(/[^\d,.]/gm, "").replace(/,/, "."));
-    if(id == undefined || id == null || name == undefined || name == null || price == undefined || price == null)
+    if(id === undefined || id === null || name === undefined || name === null || price === undefined || price === null)
         return 0;
     $.LoadingOverlay("show");
     con = true;
@@ -1176,7 +1176,7 @@ async function findListingNew(info)
     const priceAsString = session.results[listingId].price_with_fee;
     const currency = session.info.currency;
     const price = parseFloat(priceAsString.replace(/[^\d,.]/gm, "").replace(/,/, "."));
-    if(listingId == undefined || listingId == null || name == undefined || name == null || price == undefined || price == null)
+    if(listingId === undefined || listingId === null || name === undefined || name === null || price === undefined || price === null)
         return 0;
 
     const progress = new LoadingOverlayProgress(OVERLAY_PROGRESS_SETTINGS);
@@ -1207,7 +1207,7 @@ async function findListingNew(info)
         sett.currency,
         sett.lang
     );
-    if(check.success != true)
+    if(check.success !== true)
         return 0;
 
 
@@ -1372,7 +1372,7 @@ function getTier(settings, quality)
     let bestN = -1;
     for(let i = 0; i < qualities.length; i++)
     {
-        if(qualities[i] == undefined || qualities[i] == null)
+        if(qualities[i] === undefined || qualities[i] === null)
             continue;
         if(quality >= qualities[i]["limit"] && qualities[i]["limit"] > bestN)
         {
@@ -1385,7 +1385,7 @@ function getTier(settings, quality)
 
 function injectAssets(assets)
 {
-    if(assets == null || assets == undefined)
+    if(assets === null || assets === undefined)
         return 0;
     const script = $("<script>");
     script.text("g_rgAssets = $J.parseJSON('" + JSON.stringify(assets).escapeJSON() + "')");
@@ -1394,7 +1394,7 @@ function injectAssets(assets)
 
 function injectListings(lists)
 {
-    if(lists == null || lists == undefined)
+    if(lists === null || lists === undefined)
         return 0;
     const script = $("<script>");
     script.text("g_rgListingInfo = $J.parseJSON('" + JSON.stringify(lists).escapeJSON() + "')");
@@ -1403,7 +1403,7 @@ function injectListings(lists)
 
 function injectHovers(hovers)
 {
-    if(hovers == null || hovers == undefined)
+    if(hovers === null || hovers === undefined)
         return 0;
     const script = $("<script>");
     script.text(hovers);
@@ -1430,17 +1430,14 @@ function setup(selector, callback, n = 0)
 
 function sendNotification(title, message, callback)
 {
-    //noinspection JSUnresolvedVariable
-    chrome.runtime.sendMessage(
-        {
-            type: TYPE_NOTIFY,
-            data: {
-                title: title,
-                message: message,
-                callback: callback
-            }
+    chrome.runtime.sendMessage({
+        type: TYPE_NOTIFY,
+        data: {
+            title: title,
+            message: message,
+            callback: callback
         }
-    );
+    });
 }
 
 function setOptions(options, notify = true)
@@ -1463,13 +1460,11 @@ function saveSettings(settings)
 {
     const obj = {};
     obj[STORAGE_SETTINGS] = settings;
-    //noinspection JSUnresolvedVariable
     chrome.storage.sync.set(obj);
 }
 
 function loadSettings()
 {
-    //noinspection JSUnresolvedVariable
     chrome.storage.sync.get(STORAGE_SETTINGS, setOptions);
 }
 
@@ -1535,7 +1530,7 @@ function saveSessions()
 function setSessions()
 {
     const item = window.localStorage.getItem(STORAGE_SESSIONS);
-    if(item == null || item == undefined || item.length <= 0)
+    if(item === null || item === undefined || item.length <= 0)
     {
         sessions = {};
     }
@@ -1588,7 +1583,7 @@ async function filterSession(sess, session_id, sett)
         sett.currency,
         sett.lang
     );
-    if(check.success != true)
+    if(check.success !== true)
         return 0;
     let count = check.total_count;
     $.LoadingOverlay("show", {
@@ -1618,7 +1613,7 @@ async function filterSession(sess, session_id, sett)
         {
             const match = $(this).attr("id").match(/listing_(\d+)/);
             const price = $(this).find(".market_listing_price_with_fee").text();
-            if(match != null && match[1] != null && price.match(/\d/) != null)
+            if(match !== null && match[1] !== null && price.match(/\d/) !== null)
             {
                 const id = match[1];
                 ids.push(id);
@@ -1830,7 +1825,7 @@ function getAllListings()
 function fetchAllListings()
 {
     const item = window.localStorage.getItem(STORAGE_LISTINGS);
-    if(item == null || item == undefined)
+    if(item === null || item === undefined)
         all_listings = {};
     else
     {
@@ -1846,19 +1841,19 @@ function getNameFromUrl(url = null)
     if(url !== undefined && url !== null && regex.exec(url).length > 0)
         return encodeURI(decodeURI(regex.exec(url)[1]));
     const e = regex.exec(window.location.href) || regex2.exec(window.location.href);
-    if(e == null || e == undefined || e[1] == null || e[1] == undefined)
+    if(e === null || e === undefined || e[1] === null || e[1] === undefined)
         return null;
     return encodeURI(decodeURI(e[1]));
 }
 
 function onMessageListener(request, sender, callback)
 {
-    if(request.type == TYPE_UPDATE_SETTINGS)
+    if(request.type === TYPE_UPDATE_SETTINGS)
     {
         loadSettings();
         callback(true);
     }
-    if(request.type == TYPE_CLEAR_CACHE)
+    if(request.type === TYPE_CLEAR_CACHE)
     {
         clearAllListings();
         callback(true);

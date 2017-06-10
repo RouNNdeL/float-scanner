@@ -84,11 +84,11 @@ function getCookie(cname)
     for(let i = 0; i < ca.length; i++)
     {
         let c = ca[i];
-        while(c.charAt(0) == ' ')
+        while(c.charAt(0) === ' ')
         {
             c = c.substring(1);
         }
-        if(c.indexOf(name) == 0)
+        if(c.indexOf(name) === 0)
         {
             return c.substring(name.length, c.length);
         }
@@ -99,9 +99,9 @@ function getCookie(cname)
 function formatInfo(sett, tier, float, quality)
 {
     let info;
-    if(float == null || float == undefined)
+    if(float === null || float === undefined)
         float = 1;
-    if(!(tier == undefined || tier == null))
+    if(!(tier === undefined || tier === null))
     {
         const match = sett.qualities[tier].format.match(/\$f\{(\d+)}/) || [];
         const precision = parseInt(match[1]) || sett.float_places;

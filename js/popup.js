@@ -46,7 +46,7 @@ function editName(event)
     input.blur(saveName);
     input.on("keyup", function(event)
     {
-        if(event.which == 13)
+        if(event.which === 13)
             saveName(event);
     });
 }
@@ -248,7 +248,7 @@ function loadHTML(sett, scroll = null)
 
     for(let i = 0; i < qualities.length; i++)
     {
-        if(qualities[i] == null || qualities[i] == undefined)
+        if(qualities[i] === null || qualities[i] === undefined)
             continue;
         const name = qualities[i].name || DEFAULT_SETTINGS.defaults.name;
         const limit = qualities[i].limit || DEFAULT_SETTINGS.defaults.limit;
@@ -264,8 +264,8 @@ function loadHTML(sett, scroll = null)
         con.append(setting);
         const select = $("#" + id + "-weight");
         const example = $("#" + id + "-example");
-        $("#" + id + "-filter").prop("checked", id == filter);
-        $("#" + id + "-session_threshold").prop("checked", id == session_threshold);
+        $("#" + id + "-filter").prop("checked", id === filter);
+        $("#" + id + "-session_threshold").prop("checked", id === session_threshold);
         select.val(weight);
         select.material_select();
         example.text(formatInfo(sett, id, Math.random(), Math.round(Math.random() * 100)));
@@ -273,7 +273,7 @@ function loadHTML(sett, scroll = null)
 
     $("#global-container").scrollSpy();
 
-    if(scroll != null)
+    if(scroll !== null)
         $('body').animate({scrollLeft: $("body").outerWidth()}, 750);
 
     $(window).scroll(function()
@@ -405,7 +405,7 @@ function setOptions(set, options = {})
     else
         $.extend(true, settings, set[STORAGE_SETTINGS] || set);
 
-    while((settings.qualities[settings.filter_by] == null || settings.qualities[settings.filter_by] == undefined) && settings.qualities.length > 1)
+    while((settings.qualities[settings.filter_by] === null || settings.qualities[settings.filter_by] === undefined) && settings.qualities.length > 1)
     {
         settings.filter_by = Math.abs(settings.filter_by - 1);
     }
@@ -434,7 +434,7 @@ function notifyUpdate(callback)
     {
         for(let i = 0; i < tabs.length; ++i)
         {
-            if(tabs[i].url == undefined || tabs[i].url == null || tabs[i].url.match(/steamcommunity\.com\/market/).length <= 0)
+            if(tabs[i].url === undefined || tabs[i].url === null || tabs[i].url.match(/steamcommunity\.com\/market/).length <= 0)
                 continue;
             chrome.tabs.sendMessage(tabs[i].id, {type: TYPE_UPDATE_SETTINGS}, callback);
         }
@@ -447,7 +447,7 @@ function notifyClearCache(callback)
     {
         for(let i = 0; i < tabs.length; ++i)
         {
-            if(tabs[i].url == undefined || tabs[i].url == null || tabs[i].url.match(/steamcommunity\.com\/market/).length <= 0)
+            if(tabs[i].url === undefined || tabs[i].url === null || tabs[i].url.match(/steamcommunity\.com\/market/).length <= 0)
                 continue;
             chrome.tabs.sendMessage(tabs[i].id, {type: TYPE_CLEAR_CACHE}, callback);
         }
