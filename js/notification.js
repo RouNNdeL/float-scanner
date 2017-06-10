@@ -4,45 +4,48 @@
 let tabId = null;
 
 chrome.runtime.onMessage.addListener(
-    function (request, sender, callback)
+    function(request, sender, callback)
     {
         const data = request.data;
         tabId = sender.tab.id;
-        if (request.type === TYPE_NOTIFY)
+        if(request.type === TYPE_NOTIFY)
         {
-            console.log("Sending...");
             try
             {
-                if (!sender.tab.active || true)
-                    showNotification(data.title, data.message, data.callback);
+                if(!sender.tab.active || true)
+                    showNotification(data.title, data.message, data.icon);
                 callback(true);
             }
-            catch (e)
+            catch(e)
             {
-                callback(e);
                 console.log(e);
             }
         }
     }
 );
 
-chrome.notifications.onClicked.addListener(function (id)
+chrome.notifications.onClicked.addListener(function(id)
 {
-    if (id === NOTIFICATION_SCAN && tabId)
+    if(id === NOTIFICATION_SCAN && tabId)
     {
         chrome.tabs.update(tabId, {active: true});
         chrome.notifications.clear(id);
     }
 });
 
-function showNotification(title, message, callback)
+function showNotification(title, message, icon)
 {
+    console.log(icon);
+    if(icon === null)
+        icon = "/img/icon.png";
     chrome.notifications.create(NOTIFICATION_SCAN,
         {
             type: "basic",
             title: title,
             message: message,
             eventTime: Date.now(),
-            iconUrl: "/img/icon.png"
-        }, callback);
+            iconUrl: icon
+        }, function(notificationId)
+        {/* nothing */
+        });
 }

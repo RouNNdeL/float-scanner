@@ -23,7 +23,6 @@ $(function()
     setListings();
     //clearListingsOlderThen(7);
 
-    //noinspection JSUnresolvedVariable
     chrome.runtime.onMessage.addListener(onMessageListener);
 
     setup("#market_buyorder_info", buttons);
@@ -276,8 +275,7 @@ async function generateFloats(raw_json, sett, progress, count, lists, obj)
 async function getMultipleListings(base_url, start, count, currency, lang)
 {
     const url = base_url + "/render/?start=" + start + "&count=" + count + "&currency=" + currency + "&language=" + lang;
-    const r = await ajaxCall(url, "json");
-    return r;
+    return await ajaxCall(url, "json");
 }
 
 async function scanMultipleFloats(count, sett, progress, lists)
@@ -356,16 +354,18 @@ async function betterScan(count)
     progress.updateProgress(0, "0/" + count, 0);
 
     const sett = getSettings();
+    let newSession;
     try
     {
-        const new_ses = await scanMultipleFloats(count, sett, progress, getListings());
-        new_ses.info.currency = sett.currency;
+        newSession = await scanMultipleFloats(count, sett, progress, getListings());
+        newSession.info.currency = sett.currency;
         progress.updateText3("");
         progress.updateText1("Setting up the view...");
         progress.updateText2("Please be patient");
 
         const sid = createSessionId();
-        addSession(getSessions(), filterRows(new_ses, sett, sett.session_threshold), sid);
+        newSession = filterRows(newSession, sett, sett.session_threshold);
+        addSession(getSessions(), newSession, sid);
         await sleep(1000);
 
         window.location.hash = "#session_id=" + sid;
@@ -382,6 +382,12 @@ async function betterScan(count)
     {
         scanning = false;
         $.LoadingOverlay("hide");
+        const iconMatch = newSession.info.img.match(/src="(.*?)"/);
+        sendNotification("Scan finished",
+            "Name: " + newSession.info.name + "\n" +
+            "Count: " + count + "\n" +
+            "Best float: " + formatInfo(sett, null, newSession.best.float, newSession.best.quality)
+            , iconMatch[1]);
     }
 }
 
@@ -430,6 +436,7 @@ async function scanFloat()
     $(".float_container").remove();
 
     const links = scanPage();
+    //language=JQuery-CSS
     const rows = $(".market_listing_row").not("#market_buyorder_info");
     const results = {};
     let bestFloat = 1;
@@ -445,6 +452,7 @@ async function scanFloat()
     {
         const row = rows.eq(i);
 
+        //language=JQuery-CSS
         const before = row.find(".market_listing_item_name_block");
         row.find((".market_actionmenu_button")).click();
         const link = API_URL + links[i];
@@ -543,6 +551,7 @@ function scanPage()
 /**
  * @deprecated Use betterScan() from now on. It will not work with new sessions
  * @returns {number} Status
+ * @see betterScan()
  */
 async function scan()
 {
@@ -1044,21 +1053,21 @@ function sortRows(rows, sortingMode)
     return rows;
 }
 
-function filterRows(obj, settings, filter)
+function filterRows(session, settings, filter)
 {
     const min_quality = filter === null || filter === undefined ? -1 : settings.qualities[filter].limit;
     const new_rows = {};
     new_rows.results = {};
-    for(let k in obj.results)
+    for(let k in session.results)
     {
-        if(obj.results.hasOwnProperty(k) && obj.results[k].quality >= min_quality)
-            new_rows.results[k] = obj.results[k];
+        if(session.results.hasOwnProperty(k) && session.results[k].quality >= min_quality)
+            new_rows.results[k] = session.results[k];
     }
     new_rows.results = removeDuplicates(new_rows.results);
     new_rows.best = {};
     new_rows.best.float = getBestFloat(new_rows);
     new_rows.best.quality = getBestQuality(new_rows);
-    new_rows.info = obj.info;
+    new_rows.info = session.info;
     return new_rows;
 }
 
@@ -1226,6 +1235,7 @@ async function findListingNew(info)
         );
         const parsed = $.parseHTML(json.results_html);
         const tempDom = $('<div>').append(parsed);
+        //language=JQuery-CSS
         const price_container = $(".market_listing_price_with_fee", tempDom);
         price_container.each(function(i)
         {
@@ -1286,6 +1296,7 @@ async function findListingNew(info)
 }
 async function filterListing(id)
 {
+    //language=JQuery-CSS
     $(".market_listing_row").not("#listing_" + id).remove(); //Remove every listing except the one we are looking for
     await scanFloat();
 
@@ -1341,11 +1352,10 @@ async function filterListing(id)
 function ajaxCall(url, type)
 {
     return new Promise(resolve =>
-        $.ajax(
-            {
-                url: url,
-                dataType: type
-            }).done(function(result)
+        $.ajax({
+            url: url,
+            dataType: type
+        }).done(function(result)
         {
             resolve(result);
         }).fail(function(err)
@@ -1420,7 +1430,7 @@ function injectActionButtonSetup()
 function setup(selector, callback, n = 0)
 {
     if($(selector).length > 0)
-        callback();
+        callback($(selector));
     else if(n < 25)
         setTimeout(function()
         {
@@ -1428,16 +1438,24 @@ function setup(selector, callback, n = 0)
         }, 500);
 }
 
-function sendNotification(title, message, callback)
+function sendNotification(title, message, icon = null, callback = null)
 {
-    chrome.runtime.sendMessage({
+    const request = {
         type: TYPE_NOTIFY,
         data: {
             title: title,
             message: message,
-            callback: callback
+            icon: icon
         }
-    });
+    };
+    if(typeof callback === "function")
+    {
+        chrome.runtime.sendMessage(request, callback);
+    }
+    else
+    {
+        chrome.runtime.sendMessage(request);
+    }
 }
 
 function setOptions(options, notify = true)
