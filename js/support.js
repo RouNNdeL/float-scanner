@@ -302,7 +302,7 @@ const DEFAULT_SETTINGS = {
     qualities: [
         {
             name: "Low",
-            limit: 50,
+            limit: 40,
             format: "$f{3} ($p%)",
             css: {
                 "color": "#D6C833",
@@ -325,7 +325,7 @@ const DEFAULT_SETTINGS = {
             limit: 90,
             format: "$f{6} ($p%)",
             css: {
-                "color": "#6DA029",
+                "color": "#31ab1f",
                 "font-size": "18px",
                 "font-weight": "bold"
             }

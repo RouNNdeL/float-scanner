@@ -12,7 +12,6 @@ let con = true;
 let scanning = false;
 let searching = false;
 let all_listings;
-let listingFilterSettingUp = false;
 
 $(function()
 {
@@ -1341,10 +1340,6 @@ async function findListingNew(info)
 }
 async function filterListing(id)
 {
-    if(listingFilterSettingUp)
-        return 0;
-
-    listingFilterSettingUp = true;
     //language=JQuery-CSS
     $(".market_listing_row").not("#listing_" + id).remove(); //Remove every listing except the one we are looking for
     await scanFloat();
@@ -1415,8 +1410,6 @@ async function filterListing(id)
 
         appendDescriptors(descriptors, true);
         appendFraudWarnings(assets.frauds, true);
-
-        listingFilterSettingUp = false;
     });
 }
 
