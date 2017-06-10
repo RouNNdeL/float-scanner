@@ -156,6 +156,9 @@ function getDescriptorsAndFrauds(detail, id)
 {
     let assetId = detail.listings[id].asset.id;
     let asset = detail.assets[730][2][assetId];
+
+    console.log(asset);
+
     //noinspection JSUnresolvedVariable
     return {descriptors: asset.descriptions, frauds: asset.fraudwarnings};
 }

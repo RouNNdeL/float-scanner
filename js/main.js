@@ -12,6 +12,7 @@ let con = true;
 let scanning = false;
 let searching = false;
 let all_listings;
+let listingFilterSettingUp = false;
 
 $(function()
 {
@@ -1340,6 +1341,10 @@ async function findListingNew(info)
 }
 async function filterListing(id)
 {
+    if(listingFilterSettingUp)
+        return 0;
+
+    listingFilterSettingUp = true;
     //language=JQuery-CSS
     $(".market_listing_row").not("#listing_" + id).remove(); //Remove every listing except the one we are looking for
     await scanFloat();
@@ -1365,7 +1370,7 @@ async function filterListing(id)
     bigBuyButton.css("float", "");
     largeItem.append(bigBuyButton);
 
-    const price = "Price: " + listingPrice.text();
+    const price = "Price: " + listingPrice.text().replace(/[\n\t]/g, "");
     const float = floatContainer[0].outerHTML;
 
     //Load descriptors and nametag
@@ -1375,21 +1380,43 @@ async function filterListing(id)
 
         let exteriorDescriptorIndex;
         const descriptors = assets.descriptors;
+        let priceDescriptorPopulated = false;
         for(let i = 0; i < descriptors.length; i++)
         {
             const descriptor = descriptors[i];
-            if(descriptor.value.match(/(exterior|zewnętrze)/i) !== null)
+            if(descriptor.value.match(/(exterior|zewnętrze).*/i) !== null)
             {
+                /**
+                 * For some reason Steam copies the ".descriptor"s content to the global variable(s).
+                 * If we change their appearance the global variable(s) will change as well. This means,
+                 * that when we run this function again it's going to append even more text to the descriptors.
+                 * To prevent that we're checking for descriptors modified by us and removing the added texts
+                 * or the whole descriptor (in case of a price descriptor)
+                 */
+                let populatedDescriptorMatch = descriptor.value.match(/((exterior|zewnętrze).*?)<span .*<\/span>/i);
+                if(populatedDescriptorMatch !== null)
+                {
+                    descriptor.value = populatedDescriptorMatch[1];
+                }
                 exteriorDescriptorIndex = i;
                 descriptor.value += " " + float;
             }
+            else if(descriptor.value.match(new RegExp(price)))
+            {
+                priceDescriptorPopulated = true;
+            }
         }
 
-        descriptors.splice(exteriorDescriptorIndex + 1, 0, {type: "html", value: price});
-        descriptors.splice(exteriorDescriptorIndex + 1, 0, EMPTY_DESCRIPTOR);
+        if(!priceDescriptorPopulated)
+        {
+            descriptors.splice(exteriorDescriptorIndex + 1, 0, {type: "html", value: price});
+            descriptors.splice(exteriorDescriptorIndex + 1, 0, EMPTY_DESCRIPTOR);
+        }
 
         appendDescriptors(descriptors, true);
         appendFraudWarnings(assets.frauds, true);
+
+        listingFilterSettingUp = false;
     });
 }
 
