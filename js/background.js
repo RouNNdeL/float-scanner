@@ -63,3 +63,32 @@ function showNotification(title, message, icon, tabId)
         {/* nothing */
         });
 }
+
+//Credit: https://adamfeuer.com/notes/2013/01/26/chrome-extension-making-browser-action-icon-open-options-page/
+function openOrFocusOptionsPage()
+{
+    const options = "/html/options.html";
+    const optionsUrl = chrome.extension.getURL(options);
+    chrome.tabs.query({}, function(extensionTabs)
+    {
+        let found = false;
+        for(let i = 0; i < extensionTabs.length; i++)
+        {
+            if(optionsUrl === extensionTabs[i].url)
+            {
+                found = true;
+                chrome.tabs.update(extensionTabs[i].id, {"selected": true});
+            }
+        }
+        if(found === false)
+        {
+            chrome.tabs.create({url: options});
+        }
+    });
+}
+
+// Called when the user clicks on the browser action icon.
+chrome.browserAction.onClicked.addListener(function()
+{
+    openOrFocusOptionsPage();
+});
