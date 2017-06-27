@@ -224,91 +224,95 @@ async function generateFloats(raw_json, sett, progress, count, lists, obj)
             continue;
         if(!listings.hasOwnProperty(k))
             continue;
-        const a = listings[k].asset;
-        const asset = assets[a.appid][a.contextid][a.id];
-        const link = API_URL + asset.actions[0].link.replace("%assetid%", a.id);
-        try
-        {
-            const obj = $.extend(true, {}, getInfoFromHtml(raw_json.results_html, k));
-            if(!obj.price_with_fee.match(/\d/))
-                continue;
-            let r;
-            if(lists.hasOwnProperty(k))
-            {
-                r = {};
-                const raw = lists[k];
-                r.iteminfo = {
-                    floatvalue: raw.i.f,
-                    item_name: raw.i.n,
-                    min: raw.i.m,
-                    max: raw.i.x
-                };
-                //const t1 = Date.now();
-                await sleep(20);
-                //const t2 = Date.now();
-                //console.log("Function took: %s", (t2-t1) / 1000)
-            }
-            else
-            {
-                r = await ajaxCall(link, "json");
-                const info = r.iteminfo;
-                const stripped = {
-                    d: Date.now(),
-                    p: obj.price_with_fee,
-                    i: {
-                        f: info.floatvalue,
-                        m: info.min,
-                        x: info.max,
-                        n: info.item_name
-                    }
-                };
-                addListing(k, stripped);
-            }
-            const info = r.iteminfo;
-            const f = info.floatvalue;
-            const min = info.item_name && limits[0] < info.min ? info.min : limits[0];
-            const max = info.item_name && limits[1] > info.max ? info.max : limits[1];
-            let quality = (max - f) / (max - min);
-            quality = Math.round(quality * 100);
 
-            if(bestFloat > f)
+        let listingFetched = false;
+        while(!listingFetched)
+        {
+            const a = listings[k].asset;
+            const asset = assets[a.appid][a.contextid][a.id];
+            const link = API_URL + asset.actions[0].link.replace("%assetid%", a.id);
+            try
             {
-                bestFloat = f;
-                bestQuality = quality;
+                const obj = $.extend(true, {}, getInfoFromHtml(raw_json.results_html, k));
+                if(!obj.price_with_fee.match(/\d/))
+                    break;
+                let r;
+                if(lists.hasOwnProperty(k))
+                {
+                    r = {};
+                    const raw = lists[k];
+                    r.iteminfo = {
+                        floatvalue: raw.i.f,
+                        item_name: raw.i.n,
+                        min: raw.i.m,
+                        max: raw.i.x
+                    };
+                    //const t1 = Date.now();
+                    await sleep(20);
+                    //const t2 = Date.now();
+                    //console.log("Function took: %s", (t2-t1) / 1000)
+                }
+                else
+                {
+                    r = await ajaxCall(link, "json");
+                    const info = r.iteminfo;
+                    const stripped = {
+                        d: Date.now(),
+                        p: obj.price_with_fee,
+                        i: {
+                            f: info.floatvalue,
+                            m: info.min,
+                            x: info.max,
+                            n: info.item_name
+                        }
+                    };
+                    addListing(k, stripped);
+                }
+                const info = r.iteminfo;
+                const f = info.floatvalue;
+                const min = info.item_name && limits[0] < info.min ? info.min : limits[0];
+                const max = info.item_name && limits[1] > info.max ? info.max : limits[1];
+                let quality = (max - f) / (max - min);
+                quality = Math.round(quality * 100);
+
+                if(bestFloat > f)
+                {
+                    bestFloat = f;
+                    bestQuality = quality;
+                }
+                obj.float = f;
+                obj.quality = quality;
+                obj.url = asset.actions[0].url;
+                img = fillImgTemplate(asset);
+                name = asset.market_name;
+                results[k] = obj;
+
+                listingFetched = true;
             }
-            obj.float = f;
-            obj.quality = quality;
-            obj.url = asset.actions[0].url;
-            img = fillImgTemplate(asset);
-            name = asset.market_name;
-            results[k] = obj;
-        }
-        catch(error)
-        {
-            console.error("Error: ", error);
-        }
-        finally
-        {
-            const full_obj = $.extend(true, {}, obj, {results: results});
-            progress.updateText3("");
-            progress.updateProgress(
-                ((progress.getProgress() + 1) / count) * 100,
-                progress.getProgress() + 1 + "/" + count,
-                progress.getProgress() + 1
-            );
-            progress.updateText1("Best float: " +
-                formatInfo(
-                    getSettings(), null,
-                    getBestFloat(full_obj),
-                    getBestQuality(full_obj))
-            );
-            if(full_obj.results.length === 1)
-                progress.updateText2("Found " + Object.keys(filterRows(full_obj, sett, sett.filter_by).results).length
-                    + " offer above " + sett.qualities[sett.filter_by].limit + "%");
-            else
+            catch(error)
             {
-                progress.updateText2("Found " + Object.keys(filterRows(full_obj, sett, sett.filter_by).results).length
-                    + " offers above " + sett.qualities[sett.filter_by].limit + "%");
+                console.error("Error: ", error);
+            }
+            finally
+            {
+                const full_obj = $.extend(true, {}, obj, {results: results});
+                const currentCount = Object.keys(filterRows(full_obj, sett, sett.filter_by).results).length;
+                progress.updateText3("");
+                progress.updateProgress((currentCount / count) * 100, currentCount + "/" + count, currentCount
+                );
+                progress.updateText1("Best float: " +
+                    formatInfo(
+                        getSettings(), null,
+                        getBestFloat(full_obj),
+                        getBestQuality(full_obj))
+                );
+                if(currentCount === 1)
+                    progress.updateText2("Found 1 offer above " + sett.qualities[sett.filter_by].limit + "%");
+                else
+                {
+                    progress.updateText2("Found " + currentCount
+                        + " offers above " + sett.qualities[sett.filter_by].limit + "%");
+                }
             }
         }
     }
@@ -359,7 +363,8 @@ async function scanMultipleFloats(count, sett, progress, lists)
         $.extend(true, obj, new_results);
         obj.best = {float: getBestFloat(obj), quality: getBestQuality(obj)};
         start += max_count;
-        count -= max_count;
+        const currentCount = Object.keys(obj.results).length;
+        count = const_count - currentCount;
     }
     const ids = [];
     for(let k in obj.results)
@@ -1105,7 +1110,9 @@ function filterRows(session, settings, filter)
     for(let k in session.results)
     {
         if(session.results.hasOwnProperty(k) && session.results[k].quality >= min_quality)
+        {
             new_rows.results[k] = session.results[k];
+        }
     }
     new_rows.results = removeDuplicates(new_rows.results);
     new_rows.best = {};
