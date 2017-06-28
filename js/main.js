@@ -180,7 +180,7 @@ function buttons()
     better_scan_btn.insertBefore(before);
 }
 
-function generateButton(id, txt, onclick = null, href = null)
+function generateButton(id, text, onclick = null, href = null)
 {
     $("#" + id).remove();
     const start = $("<div>", {
@@ -196,14 +196,36 @@ function generateButton(id, txt, onclick = null, href = null)
     });
     if(href !== null)
         btn.attr("href", href);
-    const text = $("<span>", {
-        text: txt
+    const span = $("<span>", {
+        text: text
     });
-    btn.append(text);
+    btn.append(span);
     start.append(btn);
     if(typeof onclick === "function")
         btn.click(onclick);
     return start;
+}
+
+function generateSmallButton(id, text, onclick = null, href = null)
+{
+    const a = $("<a>", {
+        class: "item_market_action_button item_market_action_button_green",
+        id: id
+    });
+
+    const span = $("<span>", {
+        class: "item_market_action_button_contents",
+        text: text
+    });
+
+    if(href !== null)
+        a.attr("href", href);
+    if(typeof onclick === "function")
+        a.click(onclick);
+
+    a.append(span);
+
+    return a;
 }
 
 async function generateFloats(raw_json, sett, progress, count, lists, obj)
@@ -248,13 +270,15 @@ async function generateFloats(raw_json, sett, progress, count, lists, obj)
                         max: raw.i.x
                     };
                     //const t1 = Date.now();
-                    await sleep(20);
+                    await
+                        sleep(20);
                     //const t2 = Date.now();
                     //console.log("Function took: %s", (t2-t1) / 1000)
                 }
                 else
                 {
-                    r = await ajaxCall(link, "json");
+                    r = await
+                        ajaxCall(link, "json");
                     const info = r.iteminfo;
                     const stripped = {
                         d: Date.now(),
@@ -382,7 +406,7 @@ async function scanMultipleFloats(count, sett, progress, lists)
 
 function initializeScan()
 {
-    const count = prompt("Input number of items to  scan");
+    const count = prompt("Input number of items to scan");
     window.location.href = "#scan=" + count;
 }
 
@@ -887,8 +911,21 @@ function showSessionsOnMain(ses, sett)
     container.find("#session_container").remove();
     const sessions_container = $($.parseHTML(SESSION_CONTAINER_TEMPLATE)[0]);
     const header = $($.parseHTML(SESSIONS_HEADER)[0]);
+
+    const importButton = generateSmallButton("import_button", "Import", importSessions);
+    importButton.css("vertical-align", "middle");
+    importButton.css("padding-left", "15px");
+
+    const exportButton = generateSmallButton("export_button", "Export", exportSessions);
+    exportButton.css("vertical-align", "middle");
+    exportButton.css("padding-left", "5px");
+
+    const h3 = sessions_container.find("h3").eq(0);
+    h3.append(importButton);
+
     if(Object.keys(ses).length > 0)
     {
+        h3.append(exportButton);
         sessions_container.append(header);
         for(let k in ses)
         {
@@ -1980,4 +2017,80 @@ function onMessageListener(request, sender, callback)
         clearAllListings();
         callback(true);
     }
+}
+
+function importSessions()
+{
+    //Credits: https://stackoverflow.com/a/26917671/4061413
+    const fileChooser = document.createElement("input");
+    fileChooser.type = "file";
+    fileChooser.accept = "." + FILE_EXTENSION;
+    fileChooser.style.display = "none";
+
+    fileChooser.addEventListener('change', function(e)
+    {
+        const f = e.target.files[0];
+        if(f)
+        {
+            const reader = new FileReader();
+            reader.onload = function(e)
+            {
+                const contents = e.target.result;
+                try
+                {
+                    const newSessions = $.parseJSON(contents);
+                    const newCount = mergeSessions(getSessions(), newSessions);
+                    if(newCount > 0)
+                    {
+                        saveSessions();
+                        alert("Added " + newCount + " new session" + (newCount !== 1 ? "s" : ""));
+                        window.location.reload();
+                    }
+                    else
+                    {
+                        alert("No new sessions have been added");
+                    }
+                }
+                catch(e)
+                {
+                    alert("The file is not properly formatted");
+                }
+            };
+            reader.readAsText(f);
+        }
+    });
+
+    document.body.appendChild(fileChooser);
+    fileChooser.click();
+    document.body.removeChild(fileChooser);
+}
+
+function exportSessions()
+{
+    const sessions = window.localStorage.getItem(STORAGE_SESSIONS);
+    const request = {
+        type: TYPE_EXPORT,
+        data: LZString.decompress(sessions)
+    };
+    chrome.runtime.sendMessage(request);
+}
+
+/**
+ *
+ * @param oldSessions
+ * @param newSessions
+ */
+function mergeSessions(oldSessions, newSessions)
+{
+    let newCount = 0;
+    for(let k in newSessions)
+    {
+        if(!newSessions.hasOwnProperty(k) || oldSessions.hasOwnProperty(k))
+            continue;
+
+        oldSessions[k] = newSessions[k];
+        newCount += 1;
+    }
+
+    return newCount;
 }

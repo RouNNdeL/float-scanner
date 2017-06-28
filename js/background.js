@@ -33,6 +33,10 @@ chrome.runtime.onMessage.addListener(
                 chrome.notifications.clear(NOTIFICATION_SCAN + tabId);
             }
         }
+        if(request.type === TYPE_EXPORT)
+        {
+            saveToFile(data, downloadFile);
+        }
     }
 );
 
@@ -92,3 +96,71 @@ chrome.browserAction.onClicked.addListener(function()
 {
     openOrFocusOptionsPage();
 });
+
+function saveToFile(content, callback)
+{
+    window.requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem;
+
+    function errorHandler(e)
+    {
+        let msg = '';
+
+        switch(e.code)
+        {
+            case FileError.QUOTA_EXCEEDED_ERR:
+                msg = 'QUOTA_EXCEEDED_ERR';
+                break;
+            case FileError.NOT_FOUND_ERR:
+                msg = 'NOT_FOUND_ERR';
+                break;
+            case FileError.SECURITY_ERR:
+                msg = 'SECURITY_ERR';
+                break;
+            case FileError.INVALID_MODIFICATION_ERR:
+                msg = 'INVALID_MODIFICATION_ERR';
+                break;
+            case FileError.INVALID_STATE_ERR:
+                msg = 'INVALID_STATE_ERR';
+                break;
+            default:
+                msg = 'Unknown Error';
+                break;
+        }
+
+        console.error('Error: ' + msg);
+    }
+
+    function onInitFs(fs)
+    {
+
+        fs.root.getFile('temp.'+FILE_EXTENSION, {create: true}, function(fileEntry)
+        {
+            // Create a FileWriter object for our FileEntry (log.txt).
+            fileEntry.createWriter(function(fileWriter)
+            {
+
+                // Create a new Blob and write it to log.txt.
+                const blob = new Blob([content], {type: 'text/plain'});
+
+                fileWriter.write(blob);
+
+                callback(fileEntry.toURL());
+
+            }, errorHandler);
+
+        }, errorHandler);
+
+    }
+
+    window.requestFileSystem(window.TEMPORARY, 5 * 1024 * 1024 /*5MB*/, onInitFs, errorHandler);
+}
+
+function downloadFile(url, filename = null)
+{
+    if(filename === null)
+        filename = "scanning_results_"+new Date().format("HH-MM_dd-mm")+"."+FILE_EXTENSION;
+    chrome.downloads.download({
+        url: url,
+        filename: filename
+    });
+}

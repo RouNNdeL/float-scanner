@@ -220,6 +220,22 @@ function createSessionId()
     return text;
 }
 
+function b64EncodeUnicode(str)
+{
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1)
+    {
+        return String.fromCharCode('0x' + p1);
+    }));
+}
+
+function b64DecodeUnicode(str)
+{
+    return decodeURIComponent(Array.prototype.map.call(atob(str), function(c)
+    {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+}
+
 //Constants
 const SVG_ICON_CLEAR = "<svg xmlns=\"http://www.w3.org/2000/svg\" fill=\"#000000\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\">" +
     "<path d=\"M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z\"/>" +
@@ -393,6 +409,9 @@ const TYPE_NOTIFY = "TYPE_NOTIFY";
 const TYPE_UPDATE_SETTINGS = "TYPE_UPDATE_SETTINGS";
 const TYPE_CLEAR_CACHE = "TYPE_CLEAR_CACHE";
 const TYPE_WINDOW_FOCUS = "TYPE_WINDOW_FOCUS";
+const TYPE_EXPORT = "TYPE_EXPORT";
+
+const FILE_EXTENSION = "fsc";
 
 const EMPTY_DESCRIPTOR = {type: "html", value: decodeHtml("&nbsp;")};
 
@@ -429,8 +448,8 @@ const ACTION_BUTTON_SETUP_FUNCTION =
 const SESSION_CONTAINER_TEMPLATE =
     "<div class=\"market_content_block my_listing_section market_home_listing_table\" id=\"session_container\"'>" +
     "	<h3 class=\"my_market_header\">" +
-    "		<span class=\"my_market_header_active\">My scanning results</span>" +
-    "		<span class=\"my_market_header_count\">(<span id=\"my_market_sessions_number\"></span>)</span>" +
+    "		<span class=\"my_market_header_active\" style=\"vertical-align: middle;\">My scanning results</span>" +
+    "		<span class=\"my_market_header_count\" style=\"vertical-align: middle;\">(<span id=\"my_market_sessions_number\"></span>)</span>" +
     "	</h3>" +
     "	    <div class=\"market_listing_table_message\">You don't have any results yet. " +
     "Navigate to a Counter-Strike: Global Offensive item and click on a \"Scan floats\" button.</div>" +
