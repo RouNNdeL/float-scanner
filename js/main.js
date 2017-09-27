@@ -321,9 +321,9 @@ async function generateFloats(raw_json, sett, progress, count, lists, obj)
             {
                 const full_obj = $.extend(true, {}, obj, {results: results});
                 const currentCount = Object.keys(filterRows(full_obj, sett, sett.filter_by).results).length;
+                const full_count = Object.keys(full_obj.results).length;
                 progress.updateText3("");
-                progress.updateProgress((currentCount / count) * 100, currentCount + "/" + count, currentCount
-                );
+                progress.updateProgress((full_count / count) * 100, full_count + "/" + count, full_count);
                 progress.updateText1("Best float: " +
                     formatInfo(
                         getSettings(), null,
