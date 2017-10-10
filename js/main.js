@@ -480,6 +480,8 @@ function fillImgTemplate(data)
             s = s.replaceAll("%" + k + "%", data[k]);
         }
     }
+    s = s.replace("%color%", data.name.match(/★/) !== null ? COLOR_EXTRA :
+        data.name.match(/StatTrak/) !== null ? COLOR_ST : COLOR_DEFAULT);
     return s;
 }
 
@@ -952,6 +954,8 @@ function showSessionsOnMain(ses, sett)
             s = s.replaceAll("%info%", info);
             s = s.replaceAll("%sid%", k);
             s = s.replaceAll("%quantity%", Object.keys(ses[k].results).length);
+            s = s.replace("%color%", ses[k].info.name.match(/★/) !== null ? COLOR_EXTRA :
+                ses[k].info.name.match(/StatTrak/) !== null ? COLOR_ST : COLOR_DEFAULT);
 
             if(k.match(/^\d+$/))
             {
@@ -1031,6 +1035,8 @@ function fillTemplate(obj, sett, tier, global_info, id)
     s = s.replaceAll("%id%", id);
     s = s.replaceAll("%info%", info);
     s = s.replaceAll("%style%", styleAsString);
+    s = s.replace("%color%", global_info.name.match(/★/) !== null ? COLOR_EXTRA :
+        global_info.name.match(/StatTrak/) !== null ? COLOR_ST : COLOR_DEFAULT);
     return s;
 }
 

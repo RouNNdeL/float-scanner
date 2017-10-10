@@ -243,6 +243,9 @@ const SVG_ICON_CLEAR = "<svg xmlns=\"http://www.w3.org/2000/svg\" fill=\"#000000
     "</svg>";
 const NOTIFICATION_SCAN = "ID_NOTIFICATION_SCAN-";
 const API_URL = "https://api.csgofloat.com:1738/?url=";
+const COLOR_DEFAULT = "#D2D2D2";
+const COLOR_ST = "#CF6A32";
+const COLOR_EXTRA= "rgb(134, 80, 172)";
 //const COUNTRY_CODE_API = "http://ip-api.com/json";
 /*
  This information is there in case of Chrome's Team security concerns.
@@ -422,7 +425,7 @@ const FRAUD_WARNING_TEMPLATE =
     "</div>";
 
 const IMG_TEMPLATE = "<img id=\"listing_%id%_image\" src=\"%icon_url%\" srcset=\"%icon_url%/62fx62f 1x, %icon_url%/62fx62fdpx2x 2x\" " +
-    "style=\"border-color: #D2D2D2;\" class=\"market_listing_item_img economy_item_hoverable\" alt=\"\">";
+    "style=\"border-color: %color%;\" class=\"market_listing_item_img economy_item_hoverable\" alt=\"\">";
 
 const ACTION_BUTTON_SETUP_FUNCTION =
     "function InstallMarketActionMenuButtons()" +
@@ -542,7 +545,7 @@ const ROW_TEMPLATE = "<div class=\"market_listing_row market_recent_listing_row 
     "           <span class=\"market_listing_item_float\" style=\"%style%\">%info%</span>" +
     "       </div>" +
     "       <div class=\"market_listing_item_name_block\">" +
-    "		    <span id=\"listing_%id%_name\" class=\"market_listing_item_name economy_item_hoverable\" style=\"color: #D2D2D2;\">%name%</span>" +
+    "		    <span id=\"listing_%id%_name\" class=\"market_listing_item_name economy_item_hoverable\" style=\"color: %color%;\">%name%</span>" +
     "		    <br>" +
     "		    <span class=\"market_listing_game_name\">%game%</span>" +
     "	    </div>" +
@@ -570,7 +573,7 @@ const SESSION_ROW_TEMPLATE =
     "		    </span>" +
     "	    </div>" +
     "		<div class=\"market_listing_item_name_block\">" +
-    "		<span class=\"market_listing_item_name\" style=\"color: #D2D2D2;\"><a class=\"market_listing_item_name_link\"" +
+    "		<span class=\"market_listing_item_name\" style=\"color: %color%;\"><a class=\"market_listing_item_name_link\"" +
     " href=\"https://steamcommunity.com/market/listings/730/%name%#session_id=%sid%\">%name%</a></span><br>" +
     "		<span class=\"market_listing_game_name\">%game%</span>" +
     "	</div>" +
