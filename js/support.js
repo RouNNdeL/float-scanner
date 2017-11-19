@@ -245,7 +245,7 @@ const NOTIFICATION_SCAN = "ID_NOTIFICATION_SCAN-";
 const API_URL = "https://api.csgofloat.com:1738/?url=";
 const COLOR_DEFAULT = "#D2D2D2";
 const COLOR_ST = "#CF6A32";
-const COLOR_EXTRA= "rgb(134, 80, 172)";
+const COLOR_EXTRA = "rgb(134, 80, 172)";
 //const COUNTRY_CODE_API = "http://ip-api.com/json";
 /*
  This information is there in case of Chrome's Team security concerns.
@@ -280,42 +280,48 @@ const OVERLAY_PROGRESS_SETTINGS = {
     }
 };
 const CURRENCIES = {
-    1: {
-        name: "US Dollar",
-        symbol: "$"
-    },
-    2: {
-        name: "British Pound",
-        symbol: "£"
-    },
-    3: {
-        name: "Euro",
-        symbol: "€"
-    },
-    4: {
-        name: "Swiss Franc",
-        symbol: "CHF"
-    },
-    5: {
-        name: "Russian Rubble",
-        symbol: "руб"
-    },
-    7: {
-        name: "Brazilian Real",
-        symbol: "R$"
-    },
-    8: {
-        name: "Japanese Yen",
-        symbol: "¥"
-    },
-    9: {
-        name: "Swedish Krona",
-        symbol: "kr"
-    },
-    10: {
-        name: "Indian Rupee",
-        symbol: "Rp"
-    }
+    1: {name: "USD", symbol: "$"},
+    2: {name: "GBP", symbol: "£"},
+    3: {name: "EUR", symbol: "€"},
+    4: {name: "CHF", symbol: "CHF"},
+    5: {name: "RUB", symbol: "pуб."},
+    7: {name: "BRL", symbol: "R$"},
+    8: {name: "JPY", symbol: "¥"},
+    9: {name: "NOK", symbol: "kr"},
+    10: {name: "IDR", symbol: "Rp"},
+    11: {name: "MYR", symbol: "RM"},
+    12: {name: "PHP", symbol: "P"},
+    13: {name: "SGD", symbol: "S$"},
+    14: {name: "THB", symbol: "฿"},
+    15: {name: "VND", symbol: "₫"},
+    16: {name: "KRW", symbol: "₩"},
+    17: {name: "TRY", symbol: "TL"},
+    18: {name: "UAH", symbol: "₴"},
+    19: {name: "MXN", symbol: "Mex$"},
+    20: {name: "CAD", symbol: "CDN$"},
+    21: {name: "AUD", symbol: "A$"},
+    22: {name: "NZD", symbol: "NZ$"},
+    6: {name: "PLN", symbol: "zł"},
+    23: {name: "CNY", symbol: "¥"},
+    24: {name: "INR", symbol: "₹"},
+    25: {name: "CLP", symbol: "CLP$"},
+    26: {name: "PEN", symbol: "S/."},
+    27: {name: "COP", symbol: "COL$"},
+    28: {name: "ZAR", symbol: "R"},
+    29: {name: "HKD", symbol: "HK$"},
+    30: {name: "TWD", symbol: "NT$"},
+    31: {name: "SAR", symbol: "SR"},
+    32: {name: "AED", symbol: "AED"},
+    34: {name: "ARS", symbol: "ARS$"},
+    35: {name: "ILS", symbol: "₪"},
+    36: {name: "BYN", symbol: "Br"},
+    37: {name: "KZT", symbol: "₸"},
+    38: {name: "KWD", symbol: "KD"},
+    39: {name: "QAR", symbol: "QR"},
+    40: {name: "CRC", symbol: "₡"},
+    41: {name: "UYU", symbol: "$U"},
+    9000: {name: "RMB", symbol: "刀币"},
+    9001: {name: "NXP", symbol: "원"}
 };
 const DEFAULT_SETTINGS = {
     qualities: [
