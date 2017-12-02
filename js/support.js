@@ -251,7 +251,7 @@ const COLOR_EXTRA = "rgb(134, 80, 172)";
  This information is there in case of Chrome's Team security concerns.
  We are calling the IP API just to get the user's country code, if he chooses to detect it automatically.
  The ip is never stored anywhere nor send to any external servers.
- Only used in the getCountryCode() function in popup.js file.
+ Only used in the getCountryCode() function in options.js file.
  */
 const ICON_URL = "https://steamcommunity-a.akamaihd.net/economy/image/";
 const KEY_IGNORE = [112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 9, 192, 13, 16];

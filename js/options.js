@@ -326,14 +326,14 @@ function loadHTML(sett, scroll = null)
  }*/
 function generateSetting(name, value, color, size, weight, format, id)
 {
-    return "<div class=\"row small-margin setting\" id=\"" + id + "\" style=\"margin: 5px;\">" +
+    return "<div class=\"row setting\" id=\"" + id + "\" style=\"margin: 5px;\">" +
         "    <div class=\"card\">" +
         "        <div class=\"card-content white-text\">" +
         "            <input type=\"radio\" class=\"filter\" id=\"" + id + "-filter\">" +
         "            <label for=\"" + id + "-filter\">Default filter</label>" +
         "            <input type=\"radio\" class=\"session_threshold\" id=\"" + id + "-session_threshold\">" +
         "            <label for=\"" + id + "-session_threshold\">Include in sessions</label>" +
-        "            <div class=\"row small-margin\">" +
+        "            <div class=\"row small-margin small-margin\">" +
         "                <i class=\"material-icons md-dark right delete no-select\" id=\"" + id + "-delete\">close</i>" +
         "                <div class=\"title-container\">" +
         "                    <div class=\"card-title black-text\">" + name + "</div>" +
@@ -343,7 +343,7 @@ function generateSetting(name, value, color, size, weight, format, id)
         "                <label for=\"" + id + "-percentage\">Minimum value</label>" +
         "                <input class=\"small-margin black-text limit\" type=\"number\" id=\"" + id + "-percentage\" min=\"0\" max=\"100\" value=\"" + value + "\">" +
         "            </div>" +
-        "            <div  class=\"row\">" +
+        "            <div  class=\"row small-margin\">" +
         "                <label for=\"" + id + "-color\">Color</label>" +
         "                <input type=\"color\" id=\"" + id + "-color\" value=\"" + color + "\">" +
         "            </div>" +
@@ -360,10 +360,10 @@ function generateSetting(name, value, color, size, weight, format, id)
         "                </select>" +
         "            </div>" +
         "            <div>" +
-        "                <label for=\"" + id + "-fomat\">Format</label>" +
+        "                <label for=\"" + id + "-format\">Format</label>" +
         "                <input class=\"small-margin black-text format\" type=\"text\" id=\"" + id + "-format\" value=\"" + format + "\">" +
         "            </div>" +
-        "            <div class=\"row\">" +
+        "            <div class=\"row small-margin\">" +
         "                <label for=\"" + id + "-example\">Preview:</label>" +
         "                <div class=\"example-container\" style=\"margin-top: 4px; background-color: " + settings.row_background + ";\">" +
         "                    <p id=\"" + id + "-example\" style=\"font-size: " + size + "; font-weight: " + weight + "; color: " + color + ";\" class=\"example\">0.12345 (56%)</p>" +
@@ -372,21 +372,6 @@ function generateSetting(name, value, color, size, weight, format, id)
         "        </div>" +
         "    </div>" +
         "</div>";
-}
-
-function getCountryCodeFromCookies()
-{
-    chrome.cookies.get({
-        name: "steamCountry",
-        url: "http://steamcommunity.com/market/"
-    }, onCountryCodeLoaded)
-}
-
-function onCountryCodeLoaded(cookie)
-{
-    const tmp = $.extend(true, {}, settings);
-    tmp.country = cookie.value;
-    setOptions(tmp, {});
 }
 
 function setOptions(set, options = {})
@@ -434,7 +419,7 @@ function notifyUpdate(callback)
     {
         for(let i = 0; i < tabs.length; ++i)
         {
-            if(tabs[i].url === undefined || tabs[i].url === null || tabs[i].url.match(/steamcommunity\.com\/market/) === null)
+            if(checkForMarketTab(tabs[i]))
                 continue;
             chrome.tabs.sendMessage(tabs[i].id, {type: TYPE_UPDATE_SETTINGS}, callback);
         }
@@ -447,11 +432,16 @@ function notifyClearCache(callback)
     {
         for(let i = 0; i < tabs.length; ++i)
         {
-            if(tabs[i].url === undefined || tabs[i].url === null || tabs[i].url.match(/steamcommunity\.com\/market/) === null)
+            if(checkForMarketTab(tabs[i]))
                 continue;
             chrome.tabs.sendMessage(tabs[i].id, {type: TYPE_CLEAR_CACHE}, callback);
         }
     });
+}
+
+function checkForMarketTab(tab)
+{
+    return tab.url === undefined || tab.url === null || tab.url.match(/steamcommunity\.com\/market/) === null;
 }
 
 function saveOptions(settings, callback)

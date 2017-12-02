@@ -75,14 +75,7 @@ body
 
 #globals-container
 {
-    position: fixed;
-    height: 64px;
-    z-index: 100;
-}
-
-#settings_container
-{
-    margin-top: 48px;
+    margin-bottom: 0;
 }
 
 #currency-select-container
@@ -103,8 +96,12 @@ input[type=color]
 
 input.small-margin
 {
-    margin: 0 0 10px 0;
-!important;
+    margin: 0 0 5px 0 !important;
+}
+
+.row.small-margin
+{
+    margin: 0 0 5px 0 !important;
 }
 
 p.example
