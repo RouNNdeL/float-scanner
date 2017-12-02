@@ -370,6 +370,7 @@ async function scanMultipleFloats(count, sett, progress, lists)
     const const_count = count;
     while(count > 0 && con)
     {
+        const start_time = Date.now();
         const json = await getMultipleListings(
             window.location.origin + window.location.pathname,
             start,
@@ -377,6 +378,8 @@ async function scanMultipleFloats(count, sett, progress, lists)
             sett.currency,
             sett.lang
         );
+        const end_time = Date.now();
+
         if(json.success !== true)
         {
             progress.updateText3("Steam timed-out, retrying...");
@@ -389,6 +392,14 @@ async function scanMultipleFloats(count, sett, progress, lists)
         start += max_count;
         const currentCount = Object.keys(obj.results).length;
         count = const_count - currentCount;
+
+        if(count > 0)
+        {
+            const extra_delay = Math.max(sett.request_delay - (end_time - start_time), 0);
+            progress.updateText3("Delaying for " + (extra_delay / 1000).toFixed(1) + "s");
+            await sleep(extra_delay);
+            progress.updateText3("");
+        }
     }
     const ids = [];
     for(let k in obj.results)
