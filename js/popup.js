@@ -132,7 +132,7 @@ function saveFilter(event)
     const parent = target.closest(".setting");
     const id = parent.attr("id");
     $(".filter").not(target).prop("checked", false);
-    tmp.filter_by = id;
+    tmp.filter_by = parseInt(id);
     setOptions(tmp, {notify: true, overwrite: false, reload: false});
 }
 
@@ -143,7 +143,7 @@ function saveSessionThreshold(event)
     const parent = target.closest(".setting");
     const id = parent.attr("id");
     $(".session_threshold").not(target).prop("checked", false);
-    tmp.session_threshold = id;
+    tmp.session_threshold = parseInt(id);
     setOptions(tmp, {notify: true, overwrite: false, reload: false});
 }
 
@@ -164,7 +164,7 @@ function saveCurrency(event)
 {
     const target = $(event.target);
     const tmp = $.extend(true, {}, settings);
-    tmp.currency = target.val();
+    tmp.currency = parseInt(target.val());
     setOptions(tmp, {notify: true, overwrite: false, reload: false});
 }
 
@@ -434,7 +434,7 @@ function notifyUpdate(callback)
     {
         for(let i = 0; i < tabs.length; ++i)
         {
-            if(tabs[i].url === undefined || tabs[i].url === null || tabs[i].url.match(/steamcommunity\.com\/market/).length <= 0)
+            if(tabs[i].url === undefined || tabs[i].url === null || tabs[i].url.match(/steamcommunity\.com\/market/) === null)
                 continue;
             chrome.tabs.sendMessage(tabs[i].id, {type: TYPE_UPDATE_SETTINGS}, callback);
         }
@@ -447,7 +447,7 @@ function notifyClearCache(callback)
     {
         for(let i = 0; i < tabs.length; ++i)
         {
-            if(tabs[i].url === undefined || tabs[i].url === null || tabs[i].url.match(/steamcommunity\.com\/market/).length <= 0)
+            if(tabs[i].url === undefined || tabs[i].url === null || tabs[i].url.match(/steamcommunity\.com\/market/) === null)
                 continue;
             chrome.tabs.sendMessage(tabs[i].id, {type: TYPE_CLEAR_CACHE}, callback);
         }
