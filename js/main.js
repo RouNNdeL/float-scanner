@@ -269,11 +269,7 @@ async function generateFloats(raw_json, sett, progress, count, lists, obj)
                         min: raw.i.m,
                         max: raw.i.x
                     };
-                    //const t1 = Date.now();
-                    await
-                        sleep(20);
-                    //const t2 = Date.now();
-                    //console.log("Function took: %s", (t2-t1) / 1000)
+                    await sleep(5);
                 }
                 else
                 {
@@ -371,34 +367,49 @@ async function scanMultipleFloats(count, sett, progress, lists)
     while(count > 0 && con)
     {
         const start_time = Date.now();
-        const json = await getMultipleListings(
-            window.location.origin + window.location.pathname,
-            start,
-            Math.min(count, max_count),
-            sett.currency,
-            sett.lang
-        );
-        const end_time = Date.now();
 
-        if(json.success !== true)
+        let json;
+        let skip = false;
+        try
         {
-            progress.updateText3("Steam timed-out, retrying...");
-            await sleep(sett.request_delay);
-            continue;
+            json = await getMultipleListings(
+                window.location.origin + window.location.pathname,
+                start,
+                Math.min(count, max_count),
+                sett.currency,
+                sett.lang
+            );
         }
-        const new_results = await generateFloats(json, sett, progress, const_count, lists, obj);
-        $.extend(true, obj, new_results);
-        obj.best = {float: getBestFloat(obj), quality: getBestQuality(obj)};
-        start += max_count;
-        const currentCount = Object.keys(obj.results).length;
-        count = const_count - currentCount;
-
-        if(count > 0)
+        catch(e)
         {
-            const extra_delay = Math.max(sett.request_delay - (end_time - start_time), 0);
-            progress.updateText3("Delaying for " + (extra_delay / 1000).toFixed(1) + "s");
-            await sleep(extra_delay);
-            progress.updateText3("");
+            progress.updateText3("Steam timed-out, retrying in "+(sett.request_delay/1000).toFixed(1)+"s...");
+            await sleep(sett.request_delay);
+            skip = true;
+        }
+        finally
+        {
+            if(!skip)
+            {
+                const new_results = await generateFloats(json, sett, progress, const_count, lists, obj);
+                $.extend(true, obj, new_results);
+                obj.best = {float: getBestFloat(obj), quality: getBestQuality(obj)};
+                start += max_count;
+                const currentCount = Object.keys(obj.results).length;
+                count = const_count - currentCount;
+
+                const end_time = Date.now();
+
+                if(count > 0)
+                {
+                    const extra_delay = sett.request_delay - (end_time - start_time);
+                    if(extra_delay > 0)
+                    {
+                        progress.updateText3("Delaying for " + (extra_delay / 1000).toFixed(1) + "s");
+                        await sleep(extra_delay);
+                        progress.updateText3("");
+                    }
+                }
+            }
         }
     }
     const ids = [];
@@ -427,8 +438,10 @@ async function betterScan(count)
         return 0;
     const progress = new LoadingOverlayProgress(OVERLAY_PROGRESS_SETTINGS);
     //const count = prompt("Input number of ITEMS");
-    if(count < 1 || isNaN(count))
+    if(count < 0 || isNaN(count))
         return 0;
+    if(count === 0)
+        count = 1000000
     scanning = true;
     con = true;
     $.LoadingOverlay("show", {
@@ -1326,9 +1339,10 @@ async function findListingNew(info)
 
 
     let found = false;
+    let manual_search = false;
     let count = check.total_count;
     let page = 0;
-    while(current_price < price * (1 + (sett.search_threshold / 100)) && con)
+    while(con)
     {
         await sleep(sett.request_delay);
         const json = await getMultipleListings(
@@ -1374,12 +1388,23 @@ async function findListingNew(info)
         }
         page += 1;
         start += max_count;
+
+        if(current_price < price * (1 + (sett.search_threshold / 100)) && !manual_search)
+        {
+            const stop = confirm("Listing not found, it's probably been sold already. " +
+                "Do you wish to stop searching? (If you do, you will have to press ESC to cancel it)");
+            if(stop)
+            {
+                break;
+            }
+            manual_search = true;
+        }
     }
     if(!found && con)
     {
         scanning = false;
         $.LoadingOverlay("hide");
-        const remove = confirm("Listing not found, it's probably been sold already.\nDo you want to remove this item from the session?");
+        const remove = confirm("Do you want to remove this item from the session?");
         if(remove)
         {
             removeItemFromSession(getSessions(), sessionId, listingId);
